@@ -7,6 +7,8 @@ import java.net.Socket;
 
 public class Client {
     public static void main(String[] args) {
+
+        MoveGenerator myMove = new MoveGenerator();
          
 	Socket MyClient;
 	BufferedInputStream input;
@@ -88,7 +90,8 @@ public class Client {
 		System.out.println("Dernier coup :"+ s);
 		System.out.println("Entrez votre coup : ");
 		String move = null;
-		move = console.readLine();
+		//move = console.readLine(); code obsolete, remplacé par le générateur de coup
+        move = myMove.nextMove(s);
 		output.write(move.getBytes(),0,move.length());
 		output.flush();
 				
