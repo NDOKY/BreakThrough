@@ -7,7 +7,7 @@ public class Client {
     /** If true, send ranks as 9-rank so server (rank 1 = top) gets correct squares. */
     private static final boolean SERVER_RANK_1_IS_TOP = false;
     /** Time limit per move in ms. Set from command line to match game minuterie; default 1 sec. */
-    private static long timeLimitMs = 1_000;
+    private static long timeLimitMs = 4_900;
 
     public static void main(String[] args) {
 
