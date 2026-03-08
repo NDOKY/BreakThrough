@@ -90,8 +90,9 @@ public class Client {
 		System.out.println("Dernier coup :"+ s);
 		System.out.println("Entrez votre coup : ");
 		String move = null;
-		//move = console.readLine(); code obsolete, remplacé par le générateur de coup
+		//move = console.readLine(); //code obsolete, remplacé par le générateur de coup
         move = myMove.nextMove(s);
+		//Board.printBoard();
 		output.write(move.getBytes(),0,move.length());
 		output.flush();
 				
@@ -118,6 +119,7 @@ public class Client {
 		output.flush();
 				
 	    }
+		//Board.printBoard();
         }
 	}
 	catch (IOException e) {
