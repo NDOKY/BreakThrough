@@ -11,18 +11,27 @@ enum Mark {
     private final int serverCode;
 
     Mark(int serverCode) {
+
         this.serverCode = serverCode;
     }
 
     public int toServerCode() {
+
         return serverCode;
     }
 
     public static Mark fromServerCode(int serverCode) {
+
         switch (serverCode) {
-            case 2: return noir;
-            case 4: return rouge;
-            default: return vide;
+            
+            case 2: 
+            return noir;
+
+            case 4: 
+            return rouge;
+
+            default: 
+            return vide;
         }
     }
 }

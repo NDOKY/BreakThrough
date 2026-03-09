@@ -16,27 +16,36 @@ public final class PositionEvaluator {
      * If the position is a win for a side, returns +/- WIN_SCORE.
      */
     public static int evaluate(Board board, Mark sideToMove) {
+
         Mark winner = board.getWinner();
+
         if (winner == Mark.rouge) {
             return WIN_SCORE;
         }
+
         if (winner == Mark.noir) {
             return -WIN_SCORE;
         }
 
         int score = 0;
+
         for (int rowIndex = 0; rowIndex < Board.getGridSize(); rowIndex++) {
+
             for (int colIndex = 0; colIndex < Board.getGridSize(); colIndex++) {
+
                 Mark cell = board.getCell(rowIndex, colIndex);
+
                 if (cell == Mark.rouge) {
                     score += PIECE_VALUE;
                     score += (7 - rowIndex) * ADVANCE_BONUS;
+
                 } else if (cell == Mark.noir) {
                     score -= PIECE_VALUE;
                     score -= rowIndex * ADVANCE_BONUS;
                 }
             }
         }
+        
         return score;
     }
 }

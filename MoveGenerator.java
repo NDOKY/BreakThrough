@@ -26,8 +26,11 @@ public class MoveGenerator {
      * Validates the opponent move as required by the PDF; if invalid, still returns a legal move.
      */
     public String nextMove(String lastOpponentMove) {
+
         Mark opponentSide = playingRed ? Mark.noir : Mark.rouge;
+
         if (lastOpponentMove != null && !lastOpponentMove.trim().isEmpty() && !isInvalidMovePlaceholder(lastOpponentMove)) {
+
             if (board.isValidMove(lastOpponentMove.trim(), opponentSide)) {
                 board.makeMove(lastOpponentMove.trim());
             }
@@ -39,13 +42,16 @@ public class MoveGenerator {
 
         Mark ourSide = playingRed ? Mark.rouge : Mark.noir;
         String ourMove = GameAI.getBestMove(board, ourSide, TIME_LIMIT_MS);
+
         if (ourMove != null) {
             board.makeMove(ourMove);
         }
+
         return ourMove;
     }
 
     private static boolean isInvalidMovePlaceholder(String move) {
+        
         String normalized = move.replace("-", "").trim();
         return normalized.length() >= 4 && normalized.charAt(0) == normalized.charAt(2) && normalized.charAt(1) == normalized.charAt(3);
     }
