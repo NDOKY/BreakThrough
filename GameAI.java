@@ -89,8 +89,8 @@ public final class GameAI {
         return bestMove;
     }
 
-    private static int alphaBeta(Board board, int depth, int alpha, int beta, Mark currentPlayer,
-         Mark maximizingPlayer,long deadline, boolean[] timedOut) {
+    private static int alphaBeta(Board board, int depth, int alpha, int beta,
+        Mark currentPlayer, Mark maximizingPlayer,long deadline, boolean[] timedOut) {
 
         if (System.currentTimeMillis() >= deadline) {
             timedOut[0] = true;
@@ -114,6 +114,7 @@ public final class GameAI {
         }
 
         if (currentPlayer == maximizingPlayer) {
+            
             int value = Integer.MIN_VALUE;
 
             for (String move : moves) {
@@ -149,7 +150,7 @@ public final class GameAI {
                     break;
 
             }
-            
+
             return value;
         }
     }

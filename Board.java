@@ -60,7 +60,7 @@ public class Board {
                 grid[rowIndex][colIndex] = Mark.vide;
             }
         }
-        
+
         for (int colIndex = 0; colIndex < GRID_SIZE; colIndex++) {
 
             grid[6][colIndex] = Mark.rouge;
@@ -100,6 +100,7 @@ public class Board {
 
         if (fromColIndex < 0 || fromColIndex >= GRID_SIZE || fromRowIndex < 0 || fromRowIndex >= GRID_SIZE
                 || toColIndex < 0 || toColIndex >= GRID_SIZE || toRowIndex < 0 || toRowIndex >= GRID_SIZE) {
+                    
             return;
         }
         

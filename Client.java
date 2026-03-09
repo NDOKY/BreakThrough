@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class Client {
+
     /** If true, send ranks as 9-rank so server (rank 1 = top) gets correct squares. */
     private static final boolean SERVER_RANK_1_IS_TOP = false;
+
     /** Time limit per move in ms. Set from command line to match game minuterie; default 5 sec. */
     private static long timeLimitMs = 4_900;
 
@@ -16,13 +18,17 @@ public class Client {
         BufferedOutputStream output = null;
         int[][] board = new int[8][8];
         Board gameBoard = null;
+
         /** Snapshot of board before we send our move; restored when server rejects (cmd 4). */
         Board boardBeforeOurMove = null;
+
         /** Last move we sent (so we can try a different one when server rejects with cmd 4). */
         String lastSentMove = null;
+
         Mark ourSide = null;
 
         if (args.length > 0) {
+
             try {
 
                 int seconds = Integer.parseInt(args[0]);
@@ -33,8 +39,8 @@ public class Client {
 
                 System.err.println("Usage: java Client <seconds>. Using " + (timeLimitMs / 1000) + "s.");
             }
-        } else {
 
+        } else {
             System.out.println("[Client] Time limit: " + (timeLimitMs / 1000) + "s. To match game minuterie run: java Client <seconds> (e.g. java Client 5)");
         }
 
@@ -87,8 +93,10 @@ public class Client {
                             timeLimitMs = Math.max(1_000, Math.min(60_000, sec * 1000L));
                             System.out.println("[Client] Minuterie from server: " + (timeLimitMs / 1000) + " secondes");
 
-                        } catch (NumberFormatException ignored) { }
+                        } 
+                        catch (NumberFormatException ignored) { }
                     }
+
                     gameBoard = new Board(board);
                     ourSide = Mark.rouge;
 
@@ -108,8 +116,8 @@ public class Client {
                         System.out.println("[Client] Sending move: " + move);
                         output.write(move.getBytes(), 0, move.length());
                         output.flush();
-                        if (move != null && !move.equals("0")) {
 
+                        if (move != null && !move.equals("0")) {
                             gameBoard.makeMove(move);
                         }
                     }
@@ -127,22 +135,27 @@ public class Client {
                     int x = 0, y = 0;
 
                     for (int i = 0; i < 64 && i < boardValues.length; i++) {
+
                         board[x][y] = Integer.parseInt(boardValues[i]);
                         x++;
                         if (x == 8) {
+
                             x = 0;
                             y++;
                         }
                     }
+
                     if (boardValues.length > 64) {
 
                         try {
+
                             int sec = Integer.parseInt(boardValues[64].trim());
                             timeLimitMs = Math.max(1_000, Math.min(60_000, sec * 1000L));
                             System.out.println("[Client] Minuterie from server: " + (timeLimitMs / 1000) + " secondes");
 
                         } catch (NumberFormatException ignored) { }
                     }
+
                     gameBoard = new Board(board);
                     ourSide = Mark.noir;
                 }
@@ -169,6 +182,7 @@ public class Client {
                         System.out.println("Partie terminée (condition de fin atteinte), pas de coup envoyé.");
                         output.write("0".getBytes(), 0, 1);
                         output.flush();
+
                     } else {
 
                         System.out.println("Coup choisi par l'algorithme.");
@@ -193,6 +207,7 @@ public class Client {
 
                         output.write("0".getBytes(), 0, 1);
                         output.flush();
+
                     } else {
 
                         if (boardBeforeOurMove != null) {
@@ -230,13 +245,15 @@ public class Client {
                         while (input.read() >= 0) { }
 
                     } catch (IOException ignored) { }
-                    
+
                     break;
                 }
             }
+
         } catch (IOException e) {
 
             System.out.println(e);
+
         } finally {
 
             try {
@@ -369,6 +386,7 @@ public class Client {
             return move;
 
         if (SERVER_RANK_1_IS_TOP) {
+            
             int r1 = Character.getNumericValue(n.charAt(1));
             int r2 = Character.getNumericValue(n.charAt(3));
             if (r1 >= 1 && r1 <= 8 && r2 >= 1 && r2 <= 8) {

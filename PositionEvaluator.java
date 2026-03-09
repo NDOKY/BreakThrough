@@ -36,16 +36,18 @@ public final class PositionEvaluator {
                 Mark cell = board.getCell(rowIndex, colIndex);
 
                 if (cell == Mark.rouge) {
+
                     score += PIECE_VALUE;
                     score += (7 - rowIndex) * ADVANCE_BONUS;
 
                 } else if (cell == Mark.noir) {
+                    
                     score -= PIECE_VALUE;
                     score -= rowIndex * ADVANCE_BONUS;
                 }
             }
         }
-        
+
         return score;
     }
 }
