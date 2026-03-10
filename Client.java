@@ -279,7 +279,6 @@ public class Client {
     private static String getMoveFromAI(Board board, Mark sideToMove) {
 
         if (board == null || sideToMove == null) {
-
             return "A2A3";
         }
 
@@ -291,6 +290,7 @@ public class Client {
             var moves = board.generateAllMoves(sideToMove);
             move = moves.isEmpty() ? "A2A3" : moves.get(0);
         }
+
         return move;
     }
 
@@ -337,6 +337,7 @@ public class Client {
                 }
             }
         }
+        
         return formatMoveForServer(chosen);
     }
 

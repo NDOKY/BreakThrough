@@ -1,9 +1,11 @@
+import java.util.List;
+
 /**
  * Minimax with alpha-beta pruning. Chooses a move within the given time limit.
  */
 public final class GameAI {
 
-    private static final long DEFAULT_TIME_LIMIT_MS = 4_900;
+    private static final long DEFAULT_TIME_LIMIT_MS = 4900;
 
     private GameAI() {
     }
@@ -18,7 +20,7 @@ public final class GameAI {
             return null;
         }
 
-        java.util.List<String> moves = board.generateAllMoves(sideToMove);
+        List<String> moves = board.generateAllMoves(sideToMove);
 
         if (moves.isEmpty()) {
             return null;
@@ -27,17 +29,17 @@ public final class GameAI {
             return moves.get(0);
         }
 
+        int depth = 1;
         long deadline = System.currentTimeMillis() + limitMs;
         String bestMove = moves.get(0);
-        int depth = 1;
         boolean[] timedOut = new boolean[1];
 
         while (System.currentTimeMillis() < deadline) {
 
             int alpha = Integer.MIN_VALUE;
             int beta = Integer.MAX_VALUE;
-            String depthBestMove = null;
             int depthBestScore = sideToMove == Mark.rouge ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+            String depthBestMove = null;
             timedOut[0] = false;
 
             for (String move : moves) {

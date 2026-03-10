@@ -22,16 +22,10 @@ enum Mark {
 
     public static Mark fromServerCode(int serverCode) {
 
-        switch (serverCode) {
-            
-            case 2: 
-            return noir;
-
-            case 4: 
-            return rouge;
-
-            default: 
-            return vide;
-        }
+        return switch (serverCode) {
+            case 2 -> noir;
+            case 4 -> rouge;
+            default -> vide;
+        };
     }
 }
