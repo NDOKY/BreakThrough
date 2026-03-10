@@ -9,7 +9,7 @@ public class Client {
     private static final boolean SERVER_RANK_1_IS_TOP = false;
 
     /** Time limit per move in ms. Set from command line to match game minuterie; default 5 sec. */
-    private static long timeLimitMs = 4_900;
+    private static long timeLimitMs = 50;
 
     public static void main(String[] args) {
 
@@ -386,7 +386,7 @@ public class Client {
             return move;
 
         if (SERVER_RANK_1_IS_TOP) {
-            
+
             int r1 = Character.getNumericValue(n.charAt(1));
             int r2 = Character.getNumericValue(n.charAt(3));
             if (r1 >= 1 && r1 <= 8 && r2 >= 1 && r2 <= 8) {

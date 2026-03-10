@@ -6,7 +6,7 @@ public class MoveGenerator {
 
     private Board board;
     private final boolean playingRed;
-    private static final long TIME_LIMIT_MS = 4_900;
+    private static final long TIME_LIMIT_MS = 50;
 
     public MoveGenerator(boolean playingRed) {
         this.playingRed = playingRed;
@@ -51,7 +51,7 @@ public class MoveGenerator {
     }
 
     private static boolean isInvalidMovePlaceholder(String move) {
-        
+
         String normalized = move.replace("-", "").trim();
         return normalized.length() >= 4 && normalized.charAt(0) == normalized.charAt(2) && normalized.charAt(1) == normalized.charAt(3);
     }
