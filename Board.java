@@ -11,7 +11,7 @@ public class Board {
     private static final int RED_GOAL_ROW = 0;
     private static final int BLACK_GOAL_ROW = 7;
 
-    /** Internal grid: grid[rowIndex][colIndex], row 0 = rank 1, row 7 = rank 8. */
+    // Internal grid: grid[rowIndex][colIndex], row 0 = rank 1, row 7 = rank 8.
     private Mark[][] grid;
 
     public Board() {
@@ -37,7 +37,7 @@ public class Board {
         }
     }
 
-    /** Copy constructor for search. */
+    // Copy constructor for search.
     public Board(Board other) {
 
         grid = new Mark[GRID_SIZE][GRID_SIZE];
@@ -74,9 +74,7 @@ public class Board {
         }
     }
 
-    /**
-     * Apply a move in server format ("D6-D5" or "D6D5"). Does not validate.
-     */
+    // Apply a move in server format ("D6-D5" or "D6D5"). Does not validate.
     public void makeMove(String move) {
 
         if (move == null || move.length() < 4) {
@@ -109,9 +107,7 @@ public class Board {
         grid[fromRowIndex][fromColIndex] = Mark.vide;
     }
 
-    /**
-     * Returns true if the move is valid for the given side. Used to validate opponent's move.
-     */
+    // Returns true if the move is valid for the given side.
     public boolean isValidMove(String move, Mark sideToMove) {
         
         if (move == null || move.length() < 4) {
@@ -190,9 +186,7 @@ public class Board {
         }
     }
 
-    /**
-     * All legal moves for the given side. Each move is in format "A2A3" (no dash).
-     */
+    // All legal moves for the given side. Each move is in format "A2A3" (no dash).
     public List<String> generateAllMoves(Mark sideToMove) {
 
         List<String> moves = new ArrayList<>();
@@ -245,9 +239,7 @@ public class Board {
         return "" + fromCol + fromRank + toCol + toRank;
     }
 
-    /**
-     * Apply move and return new board (for search). Current board unchanged.
-     */
+    // Apply move and return new board. Current board remains unchanged.
     public Board applyMove(String move) {
 
         Board copy = new Board(this);
@@ -264,7 +256,7 @@ public class Board {
         return grid[rowIndex][colIndex];
     }
 
-    /** Returns the winner (rouge or noir) if a piece reached the goal row; otherwise null. */
+    // Returns the winner (rouge or noir) if a piece reached the goal row. Otherwise null.
     public Mark getWinner() {
 
         for (int colIndex = 0; colIndex < GRID_SIZE; colIndex++) {
@@ -289,7 +281,7 @@ public class Board {
         return GRID_SIZE;
     }
 
-    /** Export to Client-style int[column][row] (0, 2, 4). */
+    // Export to Client-style int[column][row] (0, 2, 4).
     public int[][] toServerBoard() {
 
         int[][] serverBoard = new int[GRID_SIZE][GRID_SIZE];

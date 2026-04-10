@@ -28,8 +28,11 @@ A **Breakthrough** board game client implemented in Java. The program connects t
 
 - TCP client that handles server commands 1–5 (new game, opponent move, invalid move retry, game end).
 - Full Breakthrough rules: move validation, legal move generation, win detection (piece on goal row).
-- Configurable time limit per move (CLI or server; clamped 1–60 seconds).
+- Opponent moves validated before applying; invalid moves are ignored (logged), except placeholder moves such as `A8-A8` used when red opens.
+- Configurable time limit per move (default 5 s; CLI or server timer, clamped 1–60 seconds).
+- Optional CLI **preferred side** (`rouge` / `noir`); mismatch with server assignment → disconnect after notifying.
 - Recovery on invalid move (command 4): restore board snapshot and send an alternative legal move.
+- **Console output is in French** for consistency with the course materials.
 
 ---
 
@@ -49,11 +52,10 @@ A **Breakthrough** board game client implemented in Java. The program connects t
 | `Mark.java` | Enum for cell/side: empty (vide), black (noir), red (rouge); maps to server codes 0, 2, 4. |
 | `Board.java` | 8×8 game state: apply moves, validate, generate legal moves, detect winner, convert to/from server format. |
 | `PositionEvaluator.java` | Static evaluation for AI: win score, piece count, advance bonus (red = positive, black = negative). |
-| `GameAI.java` | Minimax + alpha–beta + iterative deepening; returns best move within time limit. |
-| `MoveGenerator.java` | Optional layer: set board from server, apply opponent move, return next AI move (50 ms limit). |
+| `GameAI.java` | Minimax + alpha–beta + iterative deepening; returns best move within a caller-supplied time limit. |
 | `Client.java` | Entry point: TCP connection, protocol loop (commands 1–5), board state, AI move selection, retry on rejection. |
 
-**Dependencies:** `Board` and `GameAI` are used by `Client`; `Client` does not use `MoveGenerator`. `PositionEvaluator` is used only by `GameAI`.
+**Dependencies:** `Client` uses `Board`, `Mark`, and `GameAI`. `GameAI` uses `Board`, `Mark`, and `PositionEvaluator`.
 
 ---
 
@@ -146,7 +148,7 @@ Static evaluation for the minimax/alpha–beta search. Score is from Red’s per
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
-| `evaluate` | `static int evaluate(Board board, Mark sideToMove)` | If Red wins → `+WIN_SCORE`; if Black wins → `-WIN_SCORE`. Otherwise: piece count × `PIECE_VALUE` plus advance × `ADVANCE_BONUS`. Red pieces add to score; Black pieces subtract. |
+| `evaluate` | `static int evaluate(Board board)` | If Red wins → `+WIN_SCORE`; if Black wins → `-WIN_SCORE`. Otherwise: piece count × `PIECE_VALUE` plus advance × `ADVANCE_BONUS`. Red pieces add to score; Black pieces subtract. |
 
 The class is `final` with a private constructor; no instances are created.
 
@@ -154,67 +156,30 @@ The class is `final` with a private constructor; no instances are created.
 
 ### 4. `GameAI`
 
-Computes the best move using **minimax with alpha–beta pruning** and **iterative deepening**, within a given time limit.
-
-#### Constants
-
-| Constant | Value | Description |
-|----------|-------|-------------|
-| `DEFAULT_TIME_LIMIT_MS` | 4_900 | Default time limit in milliseconds when the overload without `limitMs` is used. |
+Computes the best move using **minimax with alpha–beta pruning** and **iterative deepening**, within a time limit passed by the caller (e.g. `Client`).
 
 #### Methods
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
 | `getBestMove` | `static String getBestMove(Board board, Mark sideToMove, long limitMs)` | Returns the best move for `sideToMove` within `limitMs`. Uses iterative deepening (depth 1, 2, …) until time runs out; returns the best move from the last fully completed depth. Returns `null` if game over or no moves; returns the single move if only one is legal. |
-| `getBestMove` | `static String getBestMove(Board board, Mark sideToMove)` | Overload that uses `DEFAULT_TIME_LIMIT_MS`. |
-| `alphaBeta` | `private static int alphaBeta(Board, int depth, int alpha, int beta, Mark currentPlayer, Mark maximizingPlayer, long deadline, boolean[] timedOut)` | Recursive alpha–beta search. Stops at depth 0 or terminal (winner or no moves). Uses `PositionEvaluator.evaluate` at leaves and terminals. Sets `timedOut[0]` and returns when past `deadline`. Red maximizes; Black minimizes. |
-| `opposite` | `private static Mark opposite(Mark mark)` | Returns the opposite side (`rouge` ↔ `noir`). |
+| `alphaBeta` | *(private)* | Recursive alpha–beta: uses `PositionEvaluator.evaluate(board)` at leaves and terminals. Red maximizes; Black minimizes. Honors `deadline` and `timedOut[]`. |
+| `opposite` | *(private)* | Returns the opposite side (`rouge` ↔ `noir`). |
 
-The class is `final` with a private constructor; all methods are static.
-
----
-
-### 5. `MoveGenerator`
-
-Keeps a board in sync with the server and produces the next AI move: set board from server (messages 1 or 2), apply opponent move (message 3), then compute and return our move.
-
-#### Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `board` | `Board` | Current game state. |
-| `playingRed` | `boolean` | True if we play red; false if we play black. |
-| `TIME_LIMIT_MS` | `long` (static) | Time limit for AI per move (50 ms) when calling `GameAI.getBestMove`. |
-
-#### Constructors
-
-| Constructor | Description |
-|-------------|-------------|
-| `MoveGenerator(boolean playingRed)` | Initializes with an empty default board. |
-
-#### Methods
-
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `setBoard` | `void setBoard(int[][] serverBoard)` | Replaces `board` with `new Board(serverBoard)`. Call when receiving message "1" or "2" with board data. |
-| `nextMove` | `String nextMove(String lastOpponentMove)` | If `lastOpponentMove` is non-empty and not an invalid-move placeholder, validates and applies it for the opponent. If game over, returns `null`. Otherwise gets our move via `GameAI.getBestMove(board, ourSide, TIME_LIMIT_MS)`, applies it on `board`, and returns the move string. |
-| `isInvalidMovePlaceholder` | `private static boolean isInvalidMovePlaceholder(String move)` | Detects "from equals to" placeholder (e.g. `"A2A2"`). |
-
-**Note:** `Client` does not use `MoveGenerator`; it uses `Board` and `GameAI` directly.
+The class is `final` with a private constructor; all public API is static `getBestMove` with explicit `limitMs`.
 
 ---
 
-### 6. `Client`
+### 5. `Client`
 
 TCP client and game loop: connect to the server, handle commands 1–5, maintain board state, get moves from the AI, send moves, and handle invalid-move retry (command 4).
 
-#### Constants
+#### Constants & Fields
 
-| Constant | Type | Description |
-|----------|------|-------------|
-| `SERVER_RANK_1_IS_TOP` | `boolean` | If true, rank is sent as `9 - rank` so server’s rank 1 is top; currently `false`. |
-| `timeLimitMs` | `long` | Per-move time limit in ms (default 50; overridden by CLI or server, clamped 1–60 s). |
+| Name | Type | Description |
+|------|------|-------------|
+| `SERVER_RANK_1_IS_TOP` | `boolean` | If true, ranks are converted with `9 - rank` for server orientation; default `false`. |
+| `timeLimitMs` | `static long` | Per-move AI budget in ms (default 5_000; overridden by CLI numeric arg or optional 65th server field; clamped 1–60 s). |
 
 #### Main Variables (in `main`)
 
@@ -222,38 +187,42 @@ TCP client and game loop: connect to the server, handle commands 1–5, maintain
 |----------|------|-------------|
 | `myClient` | `Socket` | Connection to `localhost:8888`. |
 | `input` / `output` | `BufferedInputStream` / `BufferedOutputStream` | Streams for reading/writing. |
-| `board` | `int[8][8]` | Raw board data from server. |
+| `board` | `int[8][8]` | Raw board data from server (column-major cells in nested array layout used by `Board` constructor). |
 | `gameBoard` | `Board` | Board used for play. |
-| `boardBeforeOurMove` | `Board` | Snapshot before sending our move; restored on command 4 (invalid move). |
-| `lastSentMove` | `String` | Last move we sent; excluded when retrying on command 4. |
+| `boardBeforeOurMove` | `Board` | Snapshot before sending our move; restored on command 4. |
+| `lastSentMove` | `String` | Last move we sent; used to exclude a retry on command 4. |
 | `ourSide` | `Mark` | Our color (`rouge` or `noir`). |
+| `preferredSide` | `Mark` | Optional CLI preference; if it disagrees with message `1`/`2`, client disconnects. |
 
 #### Methods
 
-| Method | Signature | Description |
-|--------|-----------|-------------|
-| `main` | `static void main(String[] args)` | Entry point. Optional `args[0]` = seconds for `timeLimitMs`. Connects to server and runs the command loop. |
-| `getMoveFromAI` | `private static String getMoveFromAI(Board board, Mark sideToMove)` | Calls `GameAI.getBestMove` with `timeLimitMs - 200` (minimum 200 ms). Fallback: `"A2A3"` or first legal move if AI returns null. |
-| `getValidMoveForServer` | `private static String getValidMoveForServer(Board board, Mark sideToMove, String excludeMove)` | Returns a valid move to send. If `excludeMove` is set and there are multiple moves, picks one different from it (for cmd 4 retry). Formats the move for the server. |
-| `normalizeMove` | `private static String normalizeMove(String move)` | Removes dashes and spaces, converts to uppercase. |
-| `normalizeOpponentMove` | `private static String normalizeOpponentMove(String move)` | Strips brackets, dashes, spaces; optionally flips ranks if `SERVER_RANK_1_IS_TOP`. |
-| `formatMoveForServer` | `private static String formatMoveForServer(String move)` | Compact format `"A2A3"` (no dash); optionally flips ranks for server. |
+| Method | Description |
+|--------|-------------|
+| `main` | Parses CLI (time + optional side), connects, runs command loop. |
+| `parseAndFillBoardFromPayload` | Splits payload and fills `int[][] board` with 64 cell values; returns token array (for optional timer). |
+| `applyServerTimerIfPresent` | If a 65th token exists, parses seconds and updates `timeLimitMs`. |
+| `getMoveFromAI` | Calls `GameAI.getBestMove` with `max(200, timeLimitMs - 200)`; fallback first legal or `A2A3`. |
+| `getValidMoveForServer` | Builds a legal move; if `excludeMove` and several legals exist, prefers a different normalized move; formats via `formatMoveForServer`. |
+| `normalizeMove` | Strip `-`/spaces, uppercase. |
+| `isInvalidMovePlaceholder` | True for degenerate moves such as `A8A8` (same from/to). |
+| `normalizeOpponentMove` | Strip brackets/dashes/spaces; optional rank flip. |
+| `formatMoveForServer` | Compact `A2A3`; optional rank flip. |
 
 ---
 
 ## Data Flow
 
 1. **Server sends board (command 1 or 2)**  
-   Client parses the board (and optional timer), builds a `Board`, sets `ourSide`. On command 1, client also gets and sends the first move and applies it locally.
+   `parseAndFillBoardFromPayload` + `applyServerTimerIfPresent`, then `new Board(board)`. Preferred-side check. On command 1, first move is computed, sent, and applied if the game is not already over.
 
 2. **Our turn (command 1 first move, or command 3)**  
-   Client calls `getValidMoveForServer` → `getMoveFromAI` → `GameAI.getBestMove`. Inside the search, `PositionEvaluator.evaluate` and `Board.applyMove` / `generateAllMoves` are used. Client sends the chosen move and applies it to `gameBoard`.
+   Opponent move (command 3 only): normalized, validated with `isValidMove` for the opponent side; placeholders skipped; invalid moves logged and not applied. Then `getValidMoveForServer` → `getMoveFromAI` → `GameAI.getBestMove`. Search uses `PositionEvaluator.evaluate` and `Board.applyMove` / `generateAllMoves`.
 
 3. **Invalid move (command 4)**  
-   Client restores `gameBoard` from `boardBeforeOurMove`, then gets a different move with `excludeMove = lastSentMove`, sends it, and applies it.
+   Restore `gameBoard` from `boardBeforeOurMove`, pick a move with `excludeMove = lastSentMove`, send and apply.
 
 4. **Game end (command 5)**  
-   Client reads the final message, sends `"0"`, waits briefly, then exits the loop and closes the connection.
+   Read final message, send `"0"`, drain input briefly, exit loop and close.
 
 ---
 
@@ -261,11 +230,11 @@ TCP client and game loop: connect to the server, handle commands 1–5, maintain
 
 | Command | Meaning | Client action |
 |---------|---------|----------------|
-| `1` | New game; we play red (blanc). | Parse board (+ optional timer), create `Board`, get and send first move, apply locally. |
-| `2` | New game; we play black (noir). | Parse board (+ optional timer), create `Board`; no move sent yet. |
-| `3` | Opponent move. | Read move, normalize, apply on `gameBoard`. If not game over, get our move via `getValidMoveForServer`, send it, apply locally. |
-| `4` | Our move rejected. | Restore `gameBoard` from `boardBeforeOurMove`, get alternative move (excluding `lastSentMove`), send and apply. |
-| `5` | Game end. | Read final message, send `"0"`, wait briefly, exit loop. |
+| `1` | New game; we play red (blanc). | Parse board (+ optional timer), create `Board`, optional side check, send first move if needed. |
+| `2` | New game; we play black (noir). | Parse board (+ optional timer), create `Board`, optional side check; no move yet. |
+| `3` | Opponent move. | Read move, validate for opponent, apply if legal; then send our move if game continues. |
+| `4` | Our move rejected. | Restore snapshot, send a different valid move when possible. |
+| `5` | Game end. | Read trailer, send `"0"`, short wait, exit. |
 
 Board data: 64 space-separated integers (0 / 2 / 4) in column-major order; optional 65th value = timer in seconds.
 
@@ -276,14 +245,17 @@ Board data: 64 space-separated integers (0 / 2 / 4) in column-major order; optio
 - **Compile:**  
   `javac *.java`
 
-- **Run (default time limit):**  
+- **Run (default 5 s per move):**  
   `java Client`
 
-- **Run with time limit (e.g. 5 seconds per move):**  
+- **Time limit in seconds (1–60):**  
   `java Client 5`
+
+- **Preferred side (any order with numeric arg):**  
+  `java Client rouge 5` · `java Client noir` · accepts `red`, `black`, `r`, `b` as aliases.
 
 Ensure the game server is listening on `localhost:8888` before starting the client.
 
 ---
 
-*This document describes the BreakThrough project structure, classes, methods, variables, and behavior as implemented in the source code.*
+*This document reflects the BreakThrough project as implemented in the current source tree.*

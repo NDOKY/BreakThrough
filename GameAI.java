@@ -5,8 +5,6 @@ import java.util.List;
  */
 public final class GameAI {
 
-    private static final long DEFAULT_TIME_LIMIT_MS = 4_900;
-
     private GameAI() {
     }
 
@@ -93,8 +91,15 @@ public final class GameAI {
         return bestMove;
     }
 
-    private static int alphaBeta(Board board, int depth, int alpha, int beta,
-        Mark currentPlayer, Mark maximizingPlayer,long deadline, boolean[] timedOut) {
+    private static int alphaBeta(
+            Board board,
+            int depth,
+            int alpha,
+            int beta,
+            Mark currentPlayer,
+            Mark maximizingPlayer,
+            long deadline,
+            boolean[] timedOut) {
 
         if (System.currentTimeMillis() >= deadline) {
             timedOut[0] = true;
@@ -104,17 +109,17 @@ public final class GameAI {
         Mark winner = board.getWinner();
 
         if (winner != null) {
-            return PositionEvaluator.evaluate(board, maximizingPlayer);
+            return PositionEvaluator.evaluate(board);
         }
 
         if (depth == 0) {
-            return PositionEvaluator.evaluate(board, maximizingPlayer);
+            return PositionEvaluator.evaluate(board);
         }
 
-        java.util.List<String> moves = board.generateAllMoves(currentPlayer);
+        List<String> moves = board.generateAllMoves(currentPlayer);
 
         if (moves.isEmpty()) {
-            return PositionEvaluator.evaluate(board, maximizingPlayer);
+            return PositionEvaluator.evaluate(board);
         }
 
         if (currentPlayer == maximizingPlayer) {
@@ -123,12 +128,13 @@ public final class GameAI {
 
             for (String move : moves) {
 
-                if (timedOut[0]) 
+                if (timedOut[0]) {
                     break;
+                }
 
                 Board child = board.applyMove(move);
                 value = Math.max(value, alphaBeta(child, depth - 1, alpha, beta,
-                    opposite(currentPlayer), maximizingPlayer, deadline, timedOut));
+                        opposite(currentPlayer), maximizingPlayer, deadline, timedOut));
 
                 alpha = Math.max(alpha, value);
 
@@ -145,17 +151,19 @@ public final class GameAI {
 
             for (String move : moves) {
 
-                if (timedOut[0]) 
+                if (timedOut[0]) {
                     break;
+                }
 
                 Board child = board.applyMove(move);
                 value = Math.min(value, alphaBeta(child, depth - 1, alpha, beta,
-                    opposite(currentPlayer), maximizingPlayer, deadline, timedOut));
-                    
+                        opposite(currentPlayer), maximizingPlayer, deadline, timedOut));
+
                 beta = Math.min(beta, value);
 
-                if (beta <= alpha)
+                if (beta <= alpha) {
                     break;
+                }
 
             }
 
@@ -167,7 +175,4 @@ public final class GameAI {
         return mark == Mark.rouge ? Mark.noir : Mark.rouge;
     }
 
-    public static String getBestMove(Board board, Mark sideToMove) {
-        return getBestMove(board, sideToMove, DEFAULT_TIME_LIMIT_MS);
-    }
 }

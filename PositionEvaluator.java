@@ -15,7 +15,7 @@ public final class PositionEvaluator {
      * Evaluate the position for minimax. Positive favors rouge, negative favors noir.
      * If the position is a win for a side, returns +/- WIN_SCORE.
      */
-    public static int evaluate(Board board, Mark sideToMove) {
+    public static int evaluate(Board board) {
 
         Mark winner = board.getWinner();
 
@@ -41,7 +41,7 @@ public final class PositionEvaluator {
                     score += (7 - rowIndex) * ADVANCE_BONUS;
 
                 } else if (cell == Mark.noir) {
-                    
+
                     score -= PIECE_VALUE;
                     score -= rowIndex * ADVANCE_BONUS;
                 }
