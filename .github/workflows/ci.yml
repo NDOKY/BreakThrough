@@ -1,0 +1,37 @@
+# Simple CI: compile Java sources and build BreakThrough.jar
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Compile
+        run: javac -encoding UTF-8 *.java
+
+      - name: Build JAR
+        run: jar cfm BreakThrough.jar META-INF/MANIFEST.MF *.class
+
+      - name: Verify JAR entry point
+        run: java -jar BreakThrough.jar --help
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BreakThrough-jar
+          path: BreakThrough.jar
