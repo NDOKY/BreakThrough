@@ -102,5 +102,5 @@ echo Done: BreakThrough.jar
 echo Examples:
 echo   java -jar BreakThrough.jar --help
 echo   java -jar BreakThrough.jar --host 192.168.0.10 -p 8888 5 rouge
-echo   java -jar BreakThrough.jar --gui-hote
+echo   java -jar BreakThrough.jar --gui
 endlocal
