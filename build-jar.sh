@@ -15,11 +15,13 @@ if [[ ! -f META-INF/MANIFEST.MF ]]; then
   exit 1
 fi
 
+mkdir -p target/classes
+
 echo "Compiling..."
-"${JAVAC}" -encoding UTF-8 *.java
+"${JAVAC}" -d target/classes -encoding UTF-8 -Xlint:all -Werror *.java
 
 echo "Creating BreakThrough.jar..."
-"${JAR}" cfm BreakThrough.jar META-INF/MANIFEST.MF *.class
+"${JAR}" cfm BreakThrough.jar META-INF/MANIFEST.MF -C target/classes .
 
 echo ""
 echo "Done: BreakThrough.jar"

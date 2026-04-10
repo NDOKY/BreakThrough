@@ -302,4 +302,16 @@ Ensure the game server is listening on the chosen host and port before starting 
 
 ---
 
+## Tests & CI
+
+- **Unit tests** (JUnit 5) live in `src/test/java/` (`BoardTest`, `PositionEvaluatorTest`, `GameAITest`). They use the JUnit **console launcher** JAR on the classpath (same approach as GitHub Actions).
+- **Local run (after compiling `*.java` into `target/classes`):**
+  - Download `junit-platform-console-standalone-1.10.2.jar` from Maven Central.
+  - `javac -d target/test-classes -encoding UTF-8 -cp "target/classes:<junit-jar-path>" src/test/java/*.java`
+  - `java -jar <junit-jar-path> execute --class-path target/classes:target/test-classes --scan-classpath`
+- **Lint:** [Checkstyle](https://checkstyle.org/) config in `config/checkstyle.xml` (imports, need braces, line length, etc.).
+- **GitHub Actions:** `.github/workflows/ci.yml` runs Checkstyle, compiles with **`-Xlint:all -Werror`**, runs all JUnit tests, builds `BreakThrough.jar`, and checks `java -jar BreakThrough.jar --help`.
+
+---
+
 *This document reflects the BreakThrough project as implemented in the current source tree.*

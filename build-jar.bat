@@ -15,12 +15,14 @@ if not exist "META-INF\MANIFEST.MF" (
   exit /b 1
 )
 
+if not exist "target\classes" mkdir "target\classes"
+
 echo Compiling...
-"%JAVAC%" -encoding UTF-8 *.java
+"%JAVAC%" -d target\classes -encoding UTF-8 -Xlint:all -Werror *.java
 if errorlevel 1 exit /b 1
 
 echo Creating BreakThrough.jar...
-"%JAR%" cfm BreakThrough.jar META-INF\MANIFEST.MF *.class
+"%JAR%" cfm BreakThrough.jar META-INF\MANIFEST.MF -C target\classes .
 if errorlevel 1 (
   echo ERROR: jar failed. Install a JDK and add JAVA_HOME or put JDK bin on PATH.
   exit /b 1

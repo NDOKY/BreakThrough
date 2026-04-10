@@ -7,6 +7,12 @@ target/
 out/
 build/
 
+# CI / local test tooling (downloaded)
+junit-platform.jar
+checkstyle.jar
+checkstyle-*-all.jar
+junit-platform-console-standalone*.jar
+
 # Qt / Windows app (breakthrough_win11)
 breakThrough_win11/
 
