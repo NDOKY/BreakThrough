@@ -8,8 +8,8 @@ public class Client {
     /** If true, send ranks as 9-rank so server (rank 1 = top) gets correct squares. */
     private static final boolean SERVER_RANK_1_IS_TOP = false;
 
-    /** Time limit per move in ms. Set from command line to match game minuterie; default 5 sec. */
-    private static long timeLimitMs = 50;
+    /** Time limit per move in ms. The minimum limit is 200ms for better calculation. */
+    private static long timeLimitMs = 200;
 
     public static void main(String[] args) {
 
@@ -35,7 +35,7 @@ public class Client {
                 timeLimitMs = Math.max(1_000, Math.min(60_000, seconds * 1000L));
                 System.out.println("[Client] Minuterie: " + (timeLimitMs / 1000) + " secondes");
 
-            } catch (NumberFormatException e) {
+            } catch (NumberFormatException numberFormatException) {
 
                 System.err.println("Usage: java Client <seconds>. Using " + (timeLimitMs / 1000) + "s.");
             }
@@ -53,15 +53,15 @@ public class Client {
 
             while (true) {
 
-                int c = input.read();
+                int commandValue = input.read();
 
-                if (c < 0) {
+                if (commandValue < 0) {
 
                     System.out.println("Server closed connection.");
                     break;
                 }
 
-                char cmd = (char) c;
+                char cmd = (char) commandValue;
                 System.out.println(cmd);
 
                 if (cmd == '1') {
@@ -69,19 +69,19 @@ public class Client {
                     byte[] aBuffer = new byte[1024];
                     int size = input.available();
                     input.read(aBuffer, 0, size);
-                    String s = new String(aBuffer).trim();
-                    System.out.println(s);
-                    String[] boardValues = s.split(" ");
-                    int x = 0, y = 0;
+                    String boardPayload = new String(aBuffer).trim();
+                    System.out.println(boardPayload);
+                    String[] boardValues = boardPayload.split(" ");
+                    int columnIndex = 0, rowIndex = 0;
 
-                    for (int i = 0; i < 64 && i < boardValues.length; i++) {
+                    for (int valueIndex = 0; valueIndex < 64 && valueIndex < boardValues.length; valueIndex++) {
 
-                        board[x][y] = Integer.parseInt(boardValues[i]);
-                        x++;
-                        if (x == 8) {
+                        board[columnIndex][rowIndex] = Integer.parseInt(boardValues[valueIndex]);
+                        columnIndex++;
+                        if (columnIndex == 8) {
 
-                            x = 0;
-                            y++;
+                            columnIndex = 0;
+                            rowIndex++;
                         }
                     }
 
@@ -129,19 +129,19 @@ public class Client {
                     byte[] aBuffer = new byte[1024];
                     int size = input.available();
                     input.read(aBuffer, 0, size);
-                    String s = new String(aBuffer).trim();
-                    System.out.println(s);
-                    String[] boardValues = s.split(" ");
-                    int x = 0, y = 0;
+                    String boardPayload = new String(aBuffer).trim();
+                    System.out.println(boardPayload);
+                    String[] boardValues = boardPayload.split(" ");
+                    int columnIndex = 0, rowIndex = 0;
 
-                    for (int i = 0; i < 64 && i < boardValues.length; i++) {
+                    for (int valueIndex = 0; valueIndex < 64 && valueIndex < boardValues.length; valueIndex++) {
 
-                        board[x][y] = Integer.parseInt(boardValues[i]);
-                        x++;
-                        if (x == 8) {
+                        board[columnIndex][rowIndex] = Integer.parseInt(boardValues[valueIndex]);
+                        columnIndex++;
+                        if (columnIndex == 8) {
 
-                            x = 0;
-                            y++;
+                            columnIndex = 0;
+                            rowIndex++;
                         }
                     }
 
@@ -234,8 +234,8 @@ public class Client {
                     byte[] aBuffer = new byte[16];
                     int size = input.available();
                     input.read(aBuffer, 0, size);
-                    String s = new String(aBuffer).trim();
-                    System.out.println("Partie terminée. Le dernier coup joué est : " + s);
+                    String finalMoveMessage = new String(aBuffer).trim();
+                    System.out.println("Partie terminée. Le dernier coup joué est : " + finalMoveMessage);
                     output.write("0".getBytes(), 0, 1);
                     output.flush();
                     // Wait for server to close first (so it may not show "connection lost" dialog).
@@ -250,9 +250,9 @@ public class Client {
                 }
             }
 
-        } catch (IOException e) {
+        } catch (IOException ioException) {
 
-            System.out.println(e);
+            System.out.println(ioException);
 
         } finally {
 
@@ -267,9 +267,9 @@ public class Client {
                 if (myClient != null) 
                     myClient.close();
 
-            } catch (IOException e) {
+            } catch (IOException ioException) {
 
-                System.err.println("Error closing connection: " + e.getMessage());
+                System.err.println("Error closing connection: " + ioException.getMessage());
             }
 
             System.out.println("Connection closed.");
@@ -313,11 +313,11 @@ public class Client {
 
         if (excluded != null && legal.size() > 1) {
 
-            for (String m : legal) {
+            for (String legalMove : legal) {
 
-                if (!normalizeMove(m).equals(excluded) && board.isValidMove(m, sideToMove)) {
+                if (!normalizeMove(legalMove).equals(excluded) && board.isValidMove(legalMove, sideToMove)) {
 
-                    chosen = m;
+                    chosen = legalMove;
                     break;
                 }
             }
@@ -330,10 +330,10 @@ public class Client {
 
         if (!board.isValidMove(chosen, sideToMove)) {
 
-            for (String m : legal) {
+            for (String legalMove : legal) {
 
-                if (board.isValidMove(m, sideToMove)) { 
-                    chosen = m; break; 
+                if (board.isValidMove(legalMove, sideToMove)) { 
+                    chosen = legalMove; break; 
                 }
             }
         }
@@ -355,24 +355,24 @@ public class Client {
         if (move == null) 
             return null;
 
-        String n = move.replace("[", "").replace("]", "").replace("-", "").replace(" ", "").trim();
+        String normalizedMove = move.replace("[", "").replace("]", "").replace("-", "").replace(" ", "").trim();
 
-        if (n.length() < 4) 
+        if (normalizedMove.length() < 4) 
             return move.trim();
 
         if (SERVER_RANK_1_IS_TOP) {
 
-            int r1 = Character.getNumericValue(n.charAt(1));
-            int r2 = Character.getNumericValue(n.charAt(3));
+            int fromRank = Character.getNumericValue(normalizedMove.charAt(1));
+            int toRank = Character.getNumericValue(normalizedMove.charAt(3));
             
-            if (r1 >= 1 && r1 <= 8 && r2 >= 1 && r2 <= 8){
+            if (fromRank >= 1 && fromRank <= 8 && toRank >= 1 && toRank <= 8){
 
-                n = "" + n.charAt(0) + (9 - r1) + n.charAt(2) + (9 - r2);
+                normalizedMove = "" + normalizedMove.charAt(0) + (9 - fromRank) + normalizedMove.charAt(2) + (9 - toRank);
             }
                 
         }
         
-        return n;
+        return normalizedMove;
     }
 
     /** Format move for server: compact "A2A3" (no dash). If SERVER_RANK_1_IS_TOP, flips ranks so server gets correct rows. */
@@ -381,21 +381,21 @@ public class Client {
         if (move == null || move.length() < 4) 
             return move == null ? "0" : move;
 
-        String n = move.replace("-", "").replace(" ", "").trim();
+        String normalizedMove = move.replace("-", "").replace(" ", "").trim();
 
-        if (n.length() < 4) 
+        if (normalizedMove.length() < 4) 
             return move;
 
         if (SERVER_RANK_1_IS_TOP) {
 
-            int r1 = Character.getNumericValue(n.charAt(1));
-            int r2 = Character.getNumericValue(n.charAt(3));
-            if (r1 >= 1 && r1 <= 8 && r2 >= 1 && r2 <= 8) {
+            int fromRank = Character.getNumericValue(normalizedMove.charAt(1));
+            int toRank = Character.getNumericValue(normalizedMove.charAt(3));
+            if (fromRank >= 1 && fromRank <= 8 && toRank >= 1 && toRank <= 8) {
 
-                n = "" + n.charAt(0) + (9 - r1) + n.charAt(2) + (9 - r2);
+                normalizedMove = "" + normalizedMove.charAt(0) + (9 - fromRank) + normalizedMove.charAt(2) + (9 - toRank);
             }
         }
 
-        return n;
+        return normalizedMove;
     }
 }
