@@ -1,12 +1,21 @@
+import java.awt.GraphicsEnvironment;
+import java.awt.GridLayout;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.List;
 
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
 public class Client {
 
     private static final boolean SERVER_RANK_1_IS_TOP = false;
+
+    private static final int DEFAULT_SERVER_PORT = 8_888;
 
     private static long timeLimitMs = 5_000;
 
@@ -20,38 +29,24 @@ public class Client {
         Board boardBeforeOurMove = null;
         String lastSentMove = null;
         Mark ourSide = null;
-        Mark preferredSide = null;
 
-        if (args.length > 0) {
+        LaunchConfig launch = parseLaunchArguments(args);
 
-            for (String argument : args) {
-
-                try {
-
-                    int seconds = Integer.parseInt(argument);
-                    timeLimitMs = Math.max(1_000, Math.min(60_000, seconds * 1000L));
-                    continue;
-
-                } catch (NumberFormatException ignored) {
-                }
-
-                String normalizedArgument = argument.trim().toLowerCase();
-                if (normalizedArgument.equals("red") || normalizedArgument.equals("rouge") || normalizedArgument.equals("r")) {
-                    preferredSide = Mark.rouge;
-                } else if (normalizedArgument.equals("black") || normalizedArgument.equals("noir") || normalizedArgument.equals("b")) {
-                    preferredSide = Mark.noir;
-                }
-            }
+        if (launch.guiHostPrompt) {
+            promptServerAddressFromDialog(launch);
         }
+
+        Mark preferredSide = launch.preferredSide;
 
         if (preferredSide != null) {
             System.out.println("[Client] Couleur préférée : " + preferredSide);
         }
         System.out.println("[Client] Minuterie : " + (timeLimitMs / 1000) + " s.");
+        System.out.println("[Client] Serveur : " + launch.serverHost + ":" + launch.serverPort);
 
         try {
 
-            myClient = new Socket("localhost", 8888);
+            myClient = new Socket(launch.serverHost, launch.serverPort);
             input = new BufferedInputStream(myClient.getInputStream());
             output = new BufferedOutputStream(myClient.getOutputStream());
 
@@ -248,6 +243,153 @@ public class Client {
             }
 
             System.out.println("Connexion fermée.");
+        }
+    }
+
+    private static final class LaunchConfig {
+
+        String serverHost = "localhost";
+        int serverPort = DEFAULT_SERVER_PORT;
+        Mark preferredSide;
+        boolean guiHostPrompt;
+    }
+
+    private static LaunchConfig parseLaunchArguments(String[] args) {
+
+        LaunchConfig config = new LaunchConfig();
+        int index = 0;
+
+        while (index < args.length) {
+
+            String argument = args[index];
+            String lower = argument.toLowerCase();
+
+            if (lower.equals("--help") || lower.equals("-?")) {
+                printUsage();
+                System.exit(0);
+            }
+
+            if (lower.equals("--gui-hote") || lower.equals("--gui-host")) {
+                config.guiHostPrompt = true;
+                index++;
+                continue;
+            }
+
+            if (lower.equals("--host") || lower.equals("--hote") || lower.equals("-H")) {
+                if (index + 1 >= args.length) {
+                    System.err.println("[Client] --host nécessite une adresse.");
+                    printUsage();
+                    System.exit(1);
+                }
+                config.serverHost = args[index + 1].trim();
+                index += 2;
+                continue;
+            }
+
+            if (lower.equals("--port") || lower.equals("-p")) {
+                if (index + 1 >= args.length) {
+                    System.err.println("[Client] --port nécessite un numéro.");
+                    printUsage();
+                    System.exit(1);
+                }
+                try {
+                    config.serverPort = parsePort(args[index + 1]);
+                } catch (IllegalArgumentException ex) {
+                    System.err.println("[Client] " + ex.getMessage());
+                    System.exit(1);
+                }
+                index += 2;
+                continue;
+            }
+
+            try {
+
+                int seconds = Integer.parseInt(argument);
+                timeLimitMs = Math.max(1_000, Math.min(60_000, seconds * 1000L));
+                index++;
+                continue;
+
+            } catch (NumberFormatException ignored) {
+            }
+
+            String normalizedArgument = argument.trim().toLowerCase();
+            if (normalizedArgument.equals("red") || normalizedArgument.equals("rouge") || normalizedArgument.equals("r")) {
+                config.preferredSide = Mark.rouge;
+            } else if (normalizedArgument.equals("black") || normalizedArgument.equals("noir") || normalizedArgument.equals("b")) {
+                config.preferredSide = Mark.noir;
+            } else {
+                System.err.println("[Client] Argument non reconnu : " + argument);
+                printUsage();
+                System.exit(1);
+            }
+            index++;
+        }
+
+        return config;
+    }
+
+    private static int parsePort(String text) {
+
+        int port;
+        try {
+            port = Integer.parseInt(text.trim());
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Port non numérique : " + text);
+        }
+        if (port < 1 || port > 65_535) {
+            throw new IllegalArgumentException("Port invalide (1–65535) : " + port);
+        }
+        return port;
+    }
+
+    private static void printUsage() {
+
+        System.err.println("Usage : java Client [options] [secondes] [couleur]");
+        System.err.println("  --host ADR, --hote ADR, -H ADR   adresse du serveur (défaut : localhost)");
+        System.err.println("  --port N, -p N                   port TCP (défaut : " + DEFAULT_SERVER_PORT + ")");
+        System.err.println("  --gui-hote                       boîte de dialogue pour hôte et port");
+        System.err.println("  secondes                         minuterie par coup, 1–60");
+        System.err.println("  rouge|noir|r|b|red|black         couleur préférée");
+        System.err.println("Ex. : java Client --host 192.168.0.12 -p 8888 5 rouge");
+    }
+
+    private static void promptServerAddressFromDialog(LaunchConfig config) {
+
+        if (GraphicsEnvironment.isHeadless()) {
+            System.err.println("[Client] Aucun affichage graphique : impossible d'afficher la boîte de dialogue. Utilisez --host.");
+            System.exit(1);
+        }
+
+        JPanel panel = new JPanel(new GridLayout(0, 1, 4, 4));
+        JTextField hostField = new JTextField(config.serverHost, 24);
+        JTextField portField = new JTextField(String.valueOf(config.serverPort), 8);
+        panel.add(new JLabel("Adresse du serveur (IP ou nom d'hôte) :"));
+        panel.add(hostField);
+        panel.add(new JLabel("Port :"));
+        panel.add(portField);
+
+        int result = JOptionPane.showConfirmDialog(
+                null,
+                panel,
+                "Connexion au serveur BreakThrough",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+
+        if (result != JOptionPane.OK_OPTION) {
+            System.out.println("[Client] Connexion annulée.");
+            System.exit(0);
+        }
+
+        String host = hostField.getText().trim();
+        if (!host.isEmpty()) {
+            config.serverHost = host;
+        }
+
+        try {
+            config.serverPort = parsePort(portField.getText());
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+            System.exit(1);
         }
     }
 

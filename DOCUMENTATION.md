@@ -31,6 +31,7 @@ A **Breakthrough** board game client implemented in Java. The program connects t
 - Opponent moves validated before applying; invalid moves are ignored (logged), except placeholder moves such as `A8-A8` used when red opens.
 - Configurable time limit per move (default 5 s; CLI or server timer, clamped 1–60 seconds).
 - Optional CLI **preferred side** (`rouge` / `noir`); mismatch with server assignment → disconnect after notifying.
+- **Server address** configurable without editing code: `--host` / `--hote` / `-H`, `--port` / `-p`, or `--gui-hote` for a Swing dialog (non-headless). Default remains `localhost:8888`.
 - Recovery on invalid move (command 4): restore board snapshot and send an alternative legal move.
 - **Console output is in French** for consistency with the course materials.
 
@@ -179,13 +180,14 @@ TCP client and game loop: connect to the server, handle commands 1–5, maintain
 | Name | Type | Description |
 |------|------|-------------|
 | `SERVER_RANK_1_IS_TOP` | `boolean` | If true, ranks are converted with `9 - rank` for server orientation; default `false`. |
+| `DEFAULT_SERVER_PORT` | `int` | Default TCP port when not overridden (8888). |
 | `timeLimitMs` | `static long` | Per-move AI budget in ms (default 5_000; overridden by CLI numeric arg or optional 65th server field; clamped 1–60 s). |
 
 #### Main Variables (in `main`)
 
 | Variable | Type | Description |
 |----------|------|-------------|
-| `myClient` | `Socket` | Connection to `localhost:8888`. |
+| `myClient` | `Socket` | Connection to `launch.serverHost`:`launch.serverPort` (defaults `localhost:8888`). |
 | `input` / `output` | `BufferedInputStream` / `BufferedOutputStream` | Streams for reading/writing. |
 | `board` | `int[8][8]` | Raw board data from server (column-major cells in nested array layout used by `Board` constructor). |
 | `gameBoard` | `Board` | Board used for play. |
@@ -198,7 +200,12 @@ TCP client and game loop: connect to the server, handle commands 1–5, maintain
 
 | Method | Description |
 |--------|-------------|
-| `main` | Parses CLI (time + optional side), connects, runs command loop. |
+| `main` | Parses CLI (host, port, GUI prompt, time, side), connects, runs command loop. |
+| `LaunchConfig` | Holds `serverHost`, `serverPort`, `preferredSide`, `guiHostPrompt`. |
+| `parseLaunchArguments` | Parses `--host` / `--hote` / `-H`, `--port` / `-p`, `--gui-hote`, seconds, colour; unknown tokens → usage + exit. |
+| `printUsage` | French usage on `--help` / `-?` or errors. |
+| `promptServerAddressFromDialog` | Swing dialog for host/port when `--gui-hote` is set (fails if headless). |
+| `parsePort` | Validates TCP port 1–65535. |
 | `parseAndFillBoardFromPayload` | Splits payload and fills `int[][] board` with 64 cell values; returns token array (for optional timer). |
 | `applyServerTimerIfPresent` | If a 65th token exists, parses seconds and updates `timeLimitMs`. |
 | `getMoveFromAI` | Calls `GameAI.getBestMove` with `max(200, timeLimitMs - 200)`; fallback first legal or `A2A3`. |
@@ -242,19 +249,56 @@ Board data: 64 space-separated integers (0 / 2 / 4) in column-major order; optio
 
 ## Build & Run
 
-- **Compile:**  
-  `javac *.java`
+### Compile from sources
 
-- **Run (default 5 s per move):**  
+- **Compile:**  
+  `javac -encoding UTF-8 *.java`
+
+### Runnable JAR (recommended for deployment / tournament)
+
+All command-line options (host, port, GUI dialog, seconds, colour) work the same with **`java -jar`** as with **`java Client`**: arguments after the JAR name are passed to `main`.
+
+1. **Build the JAR** (requires a **JDK** with `javac` and `jar` on PATH, or set **`JAVA_HOME`**):
+   - **Windows:** run `build-jar.bat` from the project folder.
+   - **Linux / macOS:** `chmod +x build-jar.sh` then `./build-jar.sh`
+
+2. **Output:** `BreakThrough.jar` (manifest `Main-Class: Client` in `META-INF/MANIFEST.MF`).
+
+3. **Run examples:**
+
+| Goal | Command |
+|------|---------|
+| Help | `java -jar BreakThrough.jar --help` |
+| Default (localhost:8888, 5 s) | `java -jar BreakThrough.jar` |
+| Remote host + port + time + side | `java -jar BreakThrough.jar --host 192.168.0.15 -p 8888 5 rouge` |
+| Host only | `java -jar BreakThrough.jar -H 10.0.0.3` |
+| GUI for host/port | `java -jar BreakThrough.jar --gui-hote` |
+| Black + 5 s | `java -jar BreakThrough.jar 5 noir` |
+
+### Run without JAR (classpath = current directory)
+
+- **Run (default 5 s per move, localhost:8888):**  
   `java Client`
+
+- **Remote server (tournament / LAN):**  
+  `java Client --host 192.168.0.15`  
+  `java Client -H 192.168.0.15 --port 8888 5 rouge`  
+  (Use your PC’s LAN IP instead of `localhost` for a first test against a server on the same machine.)
+
+- **Graphical host/port prompt:**  
+  `java Client --gui-hote`  
+  (Requires a display; use `--host` on headless systems.)
 
 - **Time limit in seconds (1–60):**  
   `java Client 5`
 
-- **Preferred side (any order with numeric arg):**  
-  `java Client rouge 5` · `java Client noir` · accepts `red`, `black`, `r`, `b` as aliases.
+- **Preferred side (any order with other options):**  
+  `java Client rouge 5` · accepts `red`, `black`, `r`, `b` as aliases.
 
-Ensure the game server is listening on `localhost:8888` before starting the client.
+- **Help:**  
+  `java Client --help`
+
+Ensure the game server is listening on the chosen host and port before starting the client.
 
 ---
 
