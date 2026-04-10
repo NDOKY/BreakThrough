@@ -19,10 +19,10 @@ public class Client {
         int[][] board = new int[8][8];
         Board gameBoard = null;
 
-        /** Snapshot of board before we send our move; restored when server rejects (cmd 4). */
+        // Snapshot of board before we send our move; restored when server rejects (cmd 4).
         Board boardBeforeOurMove = null;
 
-        /** Last move we sent (so we can try a different one when server rejects with cmd 4). */
+        // Last move we sent (so we can try a different one when server rejects with cmd 4).
         String lastSentMove = null;
 
         Mark ourSide = null;
@@ -41,13 +41,14 @@ public class Client {
             }
 
         } else {
+
             System.out.println("[Client] Time limit: " + (timeLimitMs / 1000) + "s. To match game minuterie run: java Client <seconds> (e.g. java Client 5)");
         }
 
         try {
 
+            // Server related information.
             myClient = new Socket("localhost", 8888);
-
             input = new BufferedInputStream(myClient.getInputStream());
             output = new BufferedOutputStream(myClient.getOutputStream());
 
@@ -93,8 +94,8 @@ public class Client {
                             timeLimitMs = Math.max(1_000, Math.min(60_000, sec * 1000L));
                             System.out.println("[Client] Minuterie from server: " + (timeLimitMs / 1000) + " secondes");
 
-                        } 
-                        catch (NumberFormatException ignored) { }
+                        } catch (NumberFormatException ignored) {
+                        }
                     }
 
                     gameBoard = new Board(board);
@@ -153,7 +154,8 @@ public class Client {
                             timeLimitMs = Math.max(1_000, Math.min(60_000, sec * 1000L));
                             System.out.println("[Client] Minuterie from server: " + (timeLimitMs / 1000) + " secondes");
 
-                        } catch (NumberFormatException ignored) { }
+                        } catch (NumberFormatException ignored) {
+                        }
                     }
 
                     gameBoard = new Board(board);
@@ -238,13 +240,15 @@ public class Client {
                     System.out.println("Partie terminée. Le dernier coup joué est : " + finalMoveMessage);
                     output.write("0".getBytes(), 0, 1);
                     output.flush();
-                    // Wait for server to close first (so it may not show "connection lost" dialog).
+
+                    // Wait for server to close first.
                     try {
 
                         myClient.setSoTimeout(3000);
                         while (input.read() >= 0) { }
 
-                    } catch (IOException ignored) { }
+                    } catch (IOException ignored) {
+                    }
 
                     break;
                 }
@@ -258,14 +262,17 @@ public class Client {
 
             try {
 
-                if (output != null) 
+                if (output != null) {
                     output.close();
+                }
 
-                if (input != null) 
+                if (input != null) {
                     input.close();
+                }
 
-                if (myClient != null) 
+                if (myClient != null) {
                     myClient.close();
+                }
 
             } catch (IOException ioException) {
 
@@ -294,19 +301,22 @@ public class Client {
         return move;
     }
 
-    /** Returns a move to send to the server: valid, formatted, and different from excludeMove if provided (for cmd 4 retry). */
+    //Returns a move to send to the server.
     private static String getValidMoveForServer(Board board, Mark sideToMove, String excludeMove) {
 
-        if (board == null || sideToMove == null) 
+        if (board == null || sideToMove == null) {
             return "0";
+        }
 
-        if (board.isGameOver()) 
+        if (board.isGameOver()) {
             return "0";
+        }
 
         java.util.List<String> legal = board.generateAllMoves(sideToMove);
 
-        if (legal.isEmpty()) 
+        if (legal.isEmpty()) {
             return "0";
+        }
 
         String chosen = null;
         String excluded = excludeMove != null ? normalizeMove(excludeMove) : null;
@@ -325,15 +335,17 @@ public class Client {
         if (chosen == null) {
             chosen = getMoveFromAI(board, sideToMove);
         }
-        if (chosen == null) 
+        if (chosen == null) {
             chosen = legal.get(0);
+        }
 
         if (!board.isValidMove(chosen, sideToMove)) {
 
             for (String legalMove : legal) {
 
-                if (board.isValidMove(legalMove, sideToMove)) { 
-                    chosen = legalMove; break; 
+                if (board.isValidMove(legalMove, sideToMove)) {
+                    chosen = legalMove;
+                    break;
                 }
             }
         }
@@ -343,29 +355,32 @@ public class Client {
 
     private static String normalizeMove(String move) {
 
-        if (move == null) 
+        if (move == null) {
             return "";
+        }
 
         return move.replace("-", "").replace(" ", "").trim().toUpperCase();
     }
 
-    /** Normalize opponent move from server (strip brackets, spaces). If SERVER_RANK_1_IS_TOP, flip ranks. */
+    // Normalize opponent move from server. If SERVER_RANK_1_IS_TOP, flip ranks.
     private static String normalizeOpponentMove(String move) {
 
-        if (move == null) 
+        if (move == null) {
             return null;
+        }
 
         String normalizedMove = move.replace("[", "").replace("]", "").replace("-", "").replace(" ", "").trim();
 
-        if (normalizedMove.length() < 4) 
+        if (normalizedMove.length() < 4) {
             return move.trim();
+        }
 
         if (SERVER_RANK_1_IS_TOP) {
 
             int fromRank = Character.getNumericValue(normalizedMove.charAt(1));
             int toRank = Character.getNumericValue(normalizedMove.charAt(3));
             
-            if (fromRank >= 1 && fromRank <= 8 && toRank >= 1 && toRank <= 8){
+            if (fromRank >= 1 && fromRank <= 8 && toRank >= 1 && toRank <= 8) {
 
                 normalizedMove = "" + normalizedMove.charAt(0) + (9 - fromRank) + normalizedMove.charAt(2) + (9 - toRank);
             }
@@ -375,16 +390,18 @@ public class Client {
         return normalizedMove;
     }
 
-    /** Format move for server: compact "A2A3" (no dash). If SERVER_RANK_1_IS_TOP, flips ranks so server gets correct rows. */
+    // Format move for server (compact "A2A3"). If SERVER_RANK_1_IS_TOP, flips ranks so server gets correct rows.
     private static String formatMoveForServer(String move) {
 
-        if (move == null || move.length() < 4) 
+        if (move == null || move.length() < 4) {
             return move == null ? "0" : move;
+        }
 
         String normalizedMove = move.replace("-", "").replace(" ", "").trim();
 
-        if (normalizedMove.length() < 4) 
+        if (normalizedMove.length() < 4) {
             return move;
+        }
 
         if (SERVER_RANK_1_IS_TOP) {
 

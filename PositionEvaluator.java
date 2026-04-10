@@ -4,7 +4,7 @@
  */
 public final class PositionEvaluator {
 
-    private static final int WIN_SCORE = 100000;
+    private static final int WIN_SCORE = 100_000;
     private static final int PIECE_VALUE = 100;
     private static final int ADVANCE_BONUS = 10;
 

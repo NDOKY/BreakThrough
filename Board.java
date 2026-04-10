@@ -150,33 +150,41 @@ public class Board {
 
         if (sideToMove == Mark.rouge) {
 
-            if (rowDelta >= 0) 
+            if (rowDelta >= 0) {
                 return false;
+            }
 
-            if (rowDelta != -1) 
+            if (rowDelta != -1) {
                 return false;
+            }
 
-            if (colDelta == 0) 
+            if (colDelta == 0) {
                 return grid[toRowIndex][toColIndex] == Mark.vide;
+            }
 
-            if (colDelta == 1) 
+            if (colDelta == 1) {
                 return true;
+            }
 
             return false;
 
         } else {
 
-            if (rowDelta <= 0) 
+            if (rowDelta <= 0) {
                 return false;
+            }
 
-            if (rowDelta != 1) 
+            if (rowDelta != 1) {
                 return false;
+            }
 
-            if (colDelta == 0) 
+            if (colDelta == 0) {
                 return grid[toRowIndex][toColIndex] == Mark.vide;
+            }
 
-            if (colDelta == 1) 
+            if (colDelta == 1) {
                 return true;
+            }
 
             return false;
         }

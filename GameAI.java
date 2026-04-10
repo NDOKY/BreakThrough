@@ -5,7 +5,7 @@ import java.util.List;
  */
 public final class GameAI {
 
-    private static final long DEFAULT_TIME_LIMIT_MS = 4900;
+    private static final long DEFAULT_TIME_LIMIT_MS = 4_900;
 
     private GameAI() {
     }
@@ -47,7 +47,9 @@ public final class GameAI {
                 if (System.currentTimeMillis() >= deadline) {
                     break;
                 }
+
                 Board child = board.applyMove(move);
+                
                 int score = alphaBeta(child, depth, alpha, beta, opposite(sideToMove), sideToMove, deadline, timedOut);
 
                 if (timedOut[0]) {
@@ -125,7 +127,9 @@ public final class GameAI {
                     break;
 
                 Board child = board.applyMove(move);
-                value = Math.max(value, alphaBeta(child, depth - 1, alpha, beta, opposite(currentPlayer), maximizingPlayer, deadline, timedOut));
+                value = Math.max(value, alphaBeta(child, depth - 1, alpha, beta,
+                    opposite(currentPlayer), maximizingPlayer, deadline, timedOut));
+
                 alpha = Math.max(alpha, value);
 
                 if (beta <= alpha) {
@@ -145,7 +149,9 @@ public final class GameAI {
                     break;
 
                 Board child = board.applyMove(move);
-                value = Math.min(value, alphaBeta(child, depth - 1, alpha, beta, opposite(currentPlayer), maximizingPlayer, deadline, timedOut));
+                value = Math.min(value, alphaBeta(child, depth - 1, alpha, beta,
+                    opposite(currentPlayer), maximizingPlayer, deadline, timedOut));
+                    
                 beta = Math.min(beta, value);
 
                 if (beta <= alpha)
