@@ -259,7 +259,7 @@ Board data: 64 space-separated integers (0 / 2 / 4) in column-major order; optio
 All command-line options (host, port, GUI dialog, seconds, colour) work the same with **`java -jar`** as with **`java Client`**: arguments after the JAR name are passed to `main`.
 
 1. **Build the JAR** (requires a **JDK** with `javac` and `jar` on PATH, or set **`JAVA_HOME`**):
-   - **Windows:** run `build-jar.bat` from the project folder.
+   - **Windows:** from the project folder run `build-jar.bat` in **cmd**, or in **PowerShell** use `.\build-jar.bat` (the `.\` is required; PowerShell does not run scripts from the current directory by default).
    - **Linux / macOS:** `chmod +x build-jar.sh` then `./build-jar.sh`
 
 2. **Output:** `BreakThrough.jar` (manifest `Main-Class: Client` in `META-INF/MANIFEST.MF`).
