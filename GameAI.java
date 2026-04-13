@@ -47,8 +47,9 @@ public final class GameAI {
                 }
 
                 Board child = board.applyMove(move);
-                
-                int score = alphaBeta(child, depth, alpha, beta, opposite(sideToMove), sideToMove, deadline, timedOut);
+
+                // Static eval is always "positive = good for red"; red MAXimizes, black MINimizes at every ply.
+                int score = alphaBeta(child, depth, alpha, beta, opposite(sideToMove), deadline, timedOut);
 
                 if (timedOut[0]) {
                     break;
@@ -97,7 +98,6 @@ public final class GameAI {
             int alpha,
             int beta,
             Mark currentPlayer,
-            Mark maximizingPlayer,
             long deadline,
             boolean[] timedOut) {
 
@@ -122,8 +122,8 @@ public final class GameAI {
             return PositionEvaluator.evaluate(board);
         }
 
-        if (currentPlayer == maximizingPlayer) {
-            
+        if (currentPlayer == Mark.rouge) {
+
             int value = Integer.MIN_VALUE;
 
             for (String move : moves) {
@@ -134,7 +134,7 @@ public final class GameAI {
 
                 Board child = board.applyMove(move);
                 value = Math.max(value, alphaBeta(child, depth - 1, alpha, beta,
-                        opposite(currentPlayer), maximizingPlayer, deadline, timedOut));
+                        opposite(currentPlayer), deadline, timedOut));
 
                 alpha = Math.max(alpha, value);
 
@@ -145,30 +145,28 @@ public final class GameAI {
 
             return value;
 
-        } else {
+        }
 
-            int value = Integer.MAX_VALUE;
+        int value = Integer.MAX_VALUE;
 
-            for (String move : moves) {
+        for (String move : moves) {
 
-                if (timedOut[0]) {
-                    break;
-                }
-
-                Board child = board.applyMove(move);
-                value = Math.min(value, alphaBeta(child, depth - 1, alpha, beta,
-                        opposite(currentPlayer), maximizingPlayer, deadline, timedOut));
-
-                beta = Math.min(beta, value);
-
-                if (beta <= alpha) {
-                    break;
-                }
-
+            if (timedOut[0]) {
+                break;
             }
 
-            return value;
+            Board child = board.applyMove(move);
+            value = Math.min(value, alphaBeta(child, depth - 1, alpha, beta,
+                    opposite(currentPlayer), deadline, timedOut));
+
+            beta = Math.min(beta, value);
+
+            if (beta <= alpha) {
+                break;
+            }
         }
+
+        return value;
     }
 
     private static Mark opposite(Mark mark) {

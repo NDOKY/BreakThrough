@@ -31,7 +31,7 @@ A **Breakthrough** board game client implemented in Java. The program connects t
 - Opponent moves validated before applying; invalid moves are ignored (logged), except placeholder moves such as `A8-A8` used when red opens.
 - Configurable time limit per move (default 5 s; CLI or server timer, clamped 1–60 seconds).
 - Optional CLI **preferred side** (`rouge` / `noir`); mismatch with server assignment → disconnect after notifying.
-- **Server address** configurable without editing code: `--host` / `--hote` / `-H`, `--port` / `-p`, or **`--gui`** for a Swing dialog (host, port, seconds, colour; non-headless). Default remains `localhost:8888`. The legacy flags `--gui-hote` / `--gui-host` are still accepted.
+- **Server address** configurable without editing code: `--host` / `--hote` / `-H`, `--port` / `-p`, or a **Swing dialog** when started with **no arguments** and a display is available (host, port, seconds, colour). Use **`--nogui`** / **`--no-gui`** to skip the dialog and use CLI defaults (`localhost:8888`, etc.). On a truly headless JVM, the dialog is skipped automatically.
 - Recovery on invalid move (command 4): restore board snapshot and send an alternative legal move.
 - **Console output is in French** for consistency with the course materials.
 
@@ -179,7 +179,6 @@ TCP client and game loop: connect to the server, handle commands 1–5, maintain
 
 | Name | Type | Description |
 |------|------|-------------|
-| `SERVER_RANK_1_IS_TOP` | `boolean` | If true, ranks are converted with `9 - rank` for server orientation; default `false`. |
 | `DEFAULT_SERVER_PORT` | `int` | Default TCP port when not overridden (8888). |
 | `timeLimitMs` | `static long` | Per-move AI budget in ms (default 5_000; overridden by CLI numeric arg or optional 65th server field; clamped 1–60 s). |
 
@@ -200,11 +199,11 @@ TCP client and game loop: connect to the server, handle commands 1–5, maintain
 
 | Method | Description |
 |--------|-------------|
-| `main` | Parses CLI (host, port, GUI prompt, time, side), connects, runs command loop. |
-| `LaunchConfig` | Holds `serverHost`, `serverPort`, `preferredSide`, `guiOptionsPrompt`. |
-| `parseLaunchArguments` | Parses `--host` / `--hote` / `-H`, `--port` / `-p`, `--gui` (and legacy `--gui-hote` / `--gui-host`), seconds, colour; unknown tokens → usage + exit. |
+| `main` | Parses CLI, shows launch dialog when there are no arguments and a display is available, connects, runs command loop. |
+| `LaunchConfig` | Holds `serverHost`, `serverPort`, `preferredSide`. |
+| `parseLaunchArguments` | Parses `--host` / `--hote` / `-H`, `--port` / `-p`, `--nogui` / `--no-gui`, seconds, colour; unknown tokens → usage + exit. |
 | `printUsage` | French usage on `--help` / `-?` or errors. |
-| `promptLaunchOptionsFromDialog` | Swing dialog for host, port, seconds, and colour when `--gui` is set (fails if headless). |
+| `promptLaunchOptionsFromDialog` | Swing dialog for host, port, seconds, and colour (caller ensures a non-headless display). |
 | `parsePort` | Validates TCP port 1–65535. |
 | `parseAndFillBoardFromPayload` | Splits payload and fills `int[][] board` with 64 cell values; returns token array (for optional timer). |
 | `applyServerTimerIfPresent` | If a 65th token exists, parses seconds and updates `timeLimitMs`. |
@@ -212,8 +211,8 @@ TCP client and game loop: connect to the server, handle commands 1–5, maintain
 | `getValidMoveForServer` | Builds a legal move; if `excludeMove` and several legals exist, prefers a different normalized move; formats via `formatMoveForServer`. |
 | `normalizeMove` | Strip `-`/spaces, uppercase. |
 | `isInvalidMovePlaceholder` | True for degenerate moves such as `A8A8` (same from/to). |
-| `normalizeOpponentMove` | Strip brackets/dashes/spaces; optional rank flip. |
-| `formatMoveForServer` | Compact `A2A3`; optional rank flip. |
+| `normalizeOpponentMove` | Strip brackets/dashes/spaces. |
+| `formatMoveForServer` | Compact `A2A3` for the server. |
 
 ---
 
@@ -269,25 +268,26 @@ All command-line options (host, port, GUI dialog, seconds, colour) work the same
 | Goal | Command |
 |------|---------|
 | Help | `java -jar BreakThrough.jar --help` |
-| Default (localhost:8888, 5 s) | `java -jar BreakThrough.jar` |
+| Options dialog (no args, with display; e.g. double-click) | `java -jar BreakThrough.jar` |
+| CLI defaults only, no dialog (`localhost:8888`, 5 s) | `java -jar BreakThrough.jar --nogui` |
 | Remote host + port + time + side | `java -jar BreakThrough.jar --host 192.168.0.15 -p 8888 5 rouge` |
 | Host only | `java -jar BreakThrough.jar -H 10.0.0.3` |
-| GUI (host, port, time, side) | `java -jar BreakThrough.jar --gui` |
 | Black + 5 s | `java -jar BreakThrough.jar 5 noir` |
 
 ### Run without JAR (classpath = current directory)
 
-- **Run (default 5 s per move, localhost:8888):**  
+- **Run with options dialog (no args, with display; default 5 s, localhost:8888 in the form):**  
   `java Client`
+
+- **Run with CLI defaults only, no dialog:**  
+  `java Client --nogui`
 
 - **Remote server (tournament / LAN):**  
   `java Client --host 192.168.0.15`  
   `java Client -H 192.168.0.15 --port 8888 5 rouge`  
   (Use your PC’s LAN IP instead of `localhost` for a first test against a server on the same machine.)
 
-- **Graphical options (host, port, seconds, colour):**  
-  `java Client --gui`  
-  (Requires a display; use `--host` / `-p` / CLI seconds and colour on headless systems. Legacy: `--gui-hote`, `--gui-host`.)
+- **Headless / script:** use `--nogui` or pass `--host` / `-p` / seconds / colour so no dialog is required.
 
 - **Time limit in seconds (1–60):**  
   `java Client 5`

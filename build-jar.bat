@@ -66,7 +66,7 @@ echo Verifications :
 echo   1. JAVA_HOME = racine du JDK ^(pas ...\bin^), exemple :
 echo      C:\Program Files\Eclipse Adoptium\jdk-21.0.x-hotspot
 echo   2. PATH contient : %%JAVA_HOME%%\bin   ^(ou le chemin complet vers bin^)
-echo   3. Fermez TOUTES les fenetres PowerShell/CMD et Cursor, puis rouvrez :
+echo   3. Fermez TOUTES les fenetres PowerShell/CMD et Visual Studio Code, puis rouvrez :
 echo      les variables systeme ne s'appliquent qu'aux nouveaux processus.
 echo   4. Dans PowerShell :  .\build-jar.bat   ^(avec .\ au debut^)
 echo.
@@ -102,5 +102,5 @@ echo Done: BreakThrough.jar
 echo Examples:
 echo   java -jar BreakThrough.jar --help
 echo   java -jar BreakThrough.jar --host 192.168.0.10 -p 8888 5 rouge
-echo   java -jar BreakThrough.jar --gui
+echo   java -jar BreakThrough.jar --nogui
 endlocal

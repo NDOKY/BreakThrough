@@ -14,8 +14,6 @@ import javax.swing.JTextField;
 
 public class Client {
 
-    private static final boolean SERVER_RANK_1_IS_TOP = false;
-
     private static final int DEFAULT_SERVER_PORT = 8_888;
 
     private static long timeLimitMs = 5_000;
@@ -33,7 +31,7 @@ public class Client {
 
         LaunchConfig launch = parseLaunchArguments(args);
 
-        if (launch.guiOptionsPrompt) {
+        if (args.length == 0 && !GraphicsEnvironment.isHeadless()) {
             promptLaunchOptionsFromDialog(launch);
         }
 
@@ -250,7 +248,6 @@ public class Client {
         String serverHost = "localhost";
         int serverPort = DEFAULT_SERVER_PORT;
         Mark preferredSide = Mark.rouge;
-        boolean guiOptionsPrompt;
     }
 
     private static LaunchConfig parseLaunchArguments(String[] args) {
@@ -260,16 +257,15 @@ public class Client {
 
         while (index < args.length) {
 
-            String argument = args[index];
-            String lower = argument.toLowerCase();
+            String token = args[index].trim();
+            String lower = token.toLowerCase();
 
             if (lower.equals("--help") || lower.equals("-?")) {
                 printUsage();
                 System.exit(0);
             }
 
-            if (lower.equals("--gui") || lower.equals("--gui-hote") || lower.equals("--gui-host")) {
-                config.guiOptionsPrompt = true;
+            if (lower.equals("--nogui") || lower.equals("--no-gui")) {
                 index++;
                 continue;
             }
@@ -303,7 +299,7 @@ public class Client {
 
             try {
 
-                int seconds = Integer.parseInt(argument);
+                int seconds = Integer.parseInt(token);
                 timeLimitMs = Math.max(1_000, Math.min(60_000, seconds * 1000L));
                 index++;
                 continue;
@@ -311,13 +307,12 @@ public class Client {
             } catch (NumberFormatException ignored) {
             }
 
-            String normalizedArgument = argument.trim().toLowerCase();
-            if (normalizedArgument.equals("red") || normalizedArgument.equals("rouge") || normalizedArgument.equals("r")) {
+            if (lower.equals("red") || lower.equals("rouge") || lower.equals("r")) {
                 config.preferredSide = Mark.rouge;
-            } else if (normalizedArgument.equals("black") || normalizedArgument.equals("noir") || normalizedArgument.equals("b")) {
+            } else if (lower.equals("black") || lower.equals("noir") || lower.equals("b")) {
                 config.preferredSide = Mark.noir;
             } else {
-                System.err.println("[Client] Argument non reconnu : " + argument);
+                System.err.println("[Client] Argument non reconnu : " + args[index]);
                 printUsage();
                 System.exit(1);
             }
@@ -346,32 +341,26 @@ public class Client {
         System.err.println("Usage : java -jar BreakThrough.jar [options] [secondes] [couleur]");
         System.err.println("  --host ADR, --hote ADR, -H ADR   adresse du serveur (défaut : localhost)");
         System.err.println("  --port N, -p N                   port TCP (défaut : " + DEFAULT_SERVER_PORT + ")");
-        System.err.println("  --gui                            fenêtre : hôte, port, secondes, couleur");
+        System.err.println("  --nogui, --no-gui                pas de fenêtre (ligne de commande / mode sans affichage)");
+        System.err.println("  (sans arguments, si affichage OK)  fenêtre hôte, port, secondes, couleur (ex. double-clic sur le .jar)");
         System.err.println("  secondes                         minuterie par coup, 1–60");
         System.err.println("  rouge|noir|r|b|red|black         couleur préférée (défaut : rouge)");
         System.err.println("Ex. : java -jar BreakThrough.jar --host 192.168.0.12 -p 8888 5");
         System.err.println("      java -jar BreakThrough.jar --host 192.168.0.12 -p 8888 5 noir");
-        System.err.println("      java -jar BreakThrough.jar --gui");
+        System.err.println("      java -jar BreakThrough.jar --nogui");
     }
 
     private static void promptLaunchOptionsFromDialog(LaunchConfig config) {
 
-        if (GraphicsEnvironment.isHeadless()) {
-            System.err.println("[Client] Aucun affichage graphique : impossible d'afficher la boîte de dialogue. "
-                    + "Utilisez --host, --port, secondes et couleur sur la ligne de commande.");
-            System.exit(1);
-        }
-
         int secondsShown = (int) (timeLimitMs / 1_000L);
         secondsShown = Math.max(1, Math.min(60, secondsShown));
-        Mark colorDefault = config.preferredSide;
 
         JPanel panel = new JPanel(new GridLayout(0, 1, 4, 4));
         JTextField hostField = new JTextField(config.serverHost, 24);
         JTextField portField = new JTextField(String.valueOf(config.serverPort), 8);
         JTextField secondsField = new JTextField(String.valueOf(secondsShown), 4);
         JComboBox<String> colorCombo = new JComboBox<>(new String[] {"Rouge", "Noir"});
-        colorCombo.setSelectedItem(colorDefault == Mark.noir ? "Noir" : "Rouge");
+        colorCombo.setSelectedItem(config.preferredSide == Mark.noir ? "Noir" : "Rouge");
 
         panel.add(new JLabel("Adresse du serveur (IP ou nom d'hôte) :"));
         panel.add(hostField);
@@ -540,16 +529,6 @@ public class Client {
             return move.trim();
         }
 
-        if (SERVER_RANK_1_IS_TOP) {
-
-            int fromRank = Character.getNumericValue(normalizedMove.charAt(1));
-            int toRank = Character.getNumericValue(normalizedMove.charAt(3));
-
-            if (fromRank >= 1 && fromRank <= 8 && toRank >= 1 && toRank <= 8) {
-                normalizedMove = "" + normalizedMove.charAt(0) + (9 - fromRank) + normalizedMove.charAt(2) + (9 - toRank);
-            }
-        }
-
         return normalizedMove;
     }
 
@@ -563,15 +542,6 @@ public class Client {
 
         if (normalizedMove.length() < 4) {
             return move;
-        }
-
-        if (SERVER_RANK_1_IS_TOP) {
-
-            int fromRank = Character.getNumericValue(normalizedMove.charAt(1));
-            int toRank = Character.getNumericValue(normalizedMove.charAt(3));
-            if (fromRank >= 1 && fromRank <= 8 && toRank >= 1 && toRank <= 8) {
-                normalizedMove = "" + normalizedMove.charAt(0) + (9 - fromRank) + normalizedMove.charAt(2) + (9 - toRank);
-            }
         }
 
         return normalizedMove;
