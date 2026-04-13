@@ -217,7 +217,7 @@ public class Client {
             }
 
         } catch (IOException ioException) {
-            System.out.println("Erreur d'E/S : " + ioException);
+            System.out.println("Erreur de Input/Output : " + ioException);
 
         } finally {
 

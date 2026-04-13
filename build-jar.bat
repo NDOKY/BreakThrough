@@ -90,17 +90,17 @@ echo Compiling...
 "%JAVAC%" -d target\classes -encoding UTF-8 -Xlint:all -Werror *.java
 if errorlevel 1 exit /b 1
 
-echo Creating BreakThrough.jar...
-"%JAR_EXE%" cfm BreakThrough.jar META-INF\MANIFEST.MF -C target\classes .
+echo Creating Breakthrough.jar...
+"%JAR_EXE%" cfm Breakthrough.jar META-INF\MANIFEST.MF -C target\classes .
 if errorlevel 1 (
   echo ERROR: la commande jar a echoue.
   exit /b 1
 )
 
 echo.
-echo Done: BreakThrough.jar
+echo Done: Breakthrough.jar
 echo Examples:
-echo   java -jar BreakThrough.jar --help
-echo   java -jar BreakThrough.jar --host 192.168.0.10 -p 8888 5 rouge
-echo   java -jar BreakThrough.jar --nogui
+echo   java -jar Breakthrough.jar --help
+echo   java -jar Breakthrough.jar --host 192.168.0.10 -p 8888 5 rouge
+echo   java -jar Breakthrough.jar --nogui
 endlocal
