@@ -9,8 +9,7 @@ public final class GameAI {
     }
 
     /**
-     * Returns the best move for the given side, using iterative deepening and alpha-beta.
-     * Stops when elapsed time exceeds limitMs. limitMs is a duration.
+     * Best move for {@code sideToMove} via iterative deepening and alpha-beta within {@code limitMs}.
      */
     public static String getBestMove(Board board, Mark sideToMove, long limitMs) {
 
@@ -47,8 +46,6 @@ public final class GameAI {
                 }
 
                 Board child = board.applyMove(move);
-
-                // Static eval is always "positive = good for red"; red MAXimizes, black MINimizes at every ply.
                 int score = alphaBeta(child, depth, alpha, beta, opposite(sideToMove), deadline, timedOut);
 
                 if (timedOut[0]) {
@@ -61,6 +58,7 @@ public final class GameAI {
                         depthBestScore = score;
                         depthBestMove = move;
                     }
+
                     alpha = Math.max(alpha, depthBestScore);
 
                 } else {
@@ -69,6 +67,7 @@ public final class GameAI {
                         depthBestScore = score;
                         depthBestMove = move;
                     }
+                    
                     beta = Math.min(beta, depthBestScore);
                 }
 
