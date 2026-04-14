@@ -1,0 +1,65 @@
+# CI: lint (Checkstyle), strict compile, JUnit tests, JAR build
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+env:
+  JUNIT_PLATFORM_VERSION: "1.10.2"
+  CHECKSTYLE_VERSION: "10.18.2"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Download Checkstyle
+        run: curl -fsSLO "https://github.com/checkstyle/checkstyle/releases/download/checkstyle-${CHECKSTYLE_VERSION}/checkstyle-${CHECKSTYLE_VERSION}-all.jar"
+
+      - name: Lint — Checkstyle
+        run: java -jar "checkstyle-${CHECKSTYLE_VERSION}-all.jar" -c config/checkstyle.xml *.java src/test/java/*.java
+
+      - name: Compile main (warnings as errors)
+        run: |
+          mkdir -p target/classes
+          javac -d target/classes -encoding UTF-8 -Xlint:all -Werror *.java
+
+      - name: Download JUnit Platform
+        run: curl -fsSLO "https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/${JUNIT_PLATFORM_VERSION}/junit-platform-console-standalone-${JUNIT_PLATFORM_VERSION}.jar"
+
+      - name: Compile tests
+        run: |
+          mkdir -p target/test-classes
+          javac -d target/test-classes -encoding UTF-8 -Xlint:all -Werror \
+            -cp "target/classes:junit-platform-console-standalone-${JUNIT_PLATFORM_VERSION}.jar" \
+            src/test/java/*.java
+
+      - name: Test
+        run: |
+          java -jar "junit-platform-console-standalone-${JUNIT_PLATFORM_VERSION}.jar" execute \
+            --class-path target/classes:target/test-classes \
+            --scan-classpath
+
+      - name: Build JAR
+        run: jar cfm BreakThrough.jar META-INF/MANIFEST.MF -C target/classes .
+
+      - name: Verify JAR entry point
+        run: java -jar BreakThrough.jar --help
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BreakThrough-jar
+          path: BreakThrough.jar
