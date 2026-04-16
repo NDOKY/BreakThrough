@@ -14,7 +14,7 @@ import javax.swing.JTextField;
 
 public class Client {
 
-    private static final int DEFAULT_SERVER_PORT = 8_888;
+    private static final int DEFAULT_SERVER_PORT = 8888;
 
     private static long timeLimitMs = 5_000;
 
@@ -23,6 +23,7 @@ public class Client {
         Socket myClient = null;
         BufferedInputStream input = null;
         BufferedOutputStream output = null;
+
         int[][] board = new int[8][8];
         Board gameBoard = null;
         Board boardBeforeOurMove = null;
@@ -32,6 +33,7 @@ public class Client {
         LaunchConfig launch = parseLaunchArguments(args);
 
         if (args.length == 0 && !GraphicsEnvironment.isHeadless()) {
+
             promptLaunchOptionsFromDialog(launch);
         }
 
@@ -52,6 +54,7 @@ public class Client {
                 int commandValue = input.read();
 
                 if (commandValue < 0) {
+
                     System.out.println("Le serveur a fermé la connexion.");
                     break;
                 }
@@ -65,7 +68,9 @@ public class Client {
                     int size = input.available();
                     input.read(aBuffer, 0, size);
                     String boardPayload = new String(aBuffer).trim();
+
                     System.out.println(boardPayload);
+
                     String[] boardValues = parseAndFillBoardFromPayload(boardPayload, board);
                     applyServerTimerIfPresent(boardValues);
 
@@ -73,6 +78,7 @@ public class Client {
                     ourSide = Mark.rouge;
 
                     if (preferredSide != ourSide) {
+
                         System.err.println("[Client] Le serveur vous a assigné les rouges, mais vous préfériez les noirs. Déconnexion.");
                         output.write("0".getBytes(), 0, 1);
                         output.flush();
@@ -97,6 +103,7 @@ public class Client {
                         output.flush();
 
                         if (move != null && !move.equals("0")) {
+
                             gameBoard.makeMove(move);
                         }
                     }
@@ -117,6 +124,7 @@ public class Client {
                     ourSide = Mark.noir;
 
                     if (preferredSide != ourSide) {
+
                         System.err.println("[Client] Le serveur vous a assigné les noirs, mais vous préfériez les rouges. Déconnexion.");
                         output.write("0".getBytes(), 0, 1);
                         output.flush();
@@ -138,10 +146,15 @@ public class Client {
                     if (gameBoard != null && ourSide != null && lastMove != null && lastMove.length() >= 4) {
 
                         Mark opponentSide = ourSide == Mark.rouge ? Mark.noir : Mark.rouge;
+
                         if (!isInvalidMovePlaceholder(lastMove)) {
+
                             if (gameBoard.isValidMove(lastMove, opponentSide)) {
+
                                 gameBoard.makeMove(lastMove);
+
                             } else {
+                                
                                 System.err.println("[Client] Coup adverse invalide reçu et ignoré : " + lastMove);
                             }
                         }
@@ -156,14 +169,17 @@ public class Client {
                     } else {
 
                         System.out.println("Coup choisi par l'algorithme.");
+
                         boardBeforeOurMove = new Board(gameBoard);
                         String move = getValidMoveForServer(gameBoard, ourSide, null);
                         lastSentMove = normalizeMove(move);
+
                         System.out.println("[Client] Envoi du coup : " + move);
                         output.write(move.getBytes(), 0, move.length());
                         output.flush();
 
                         if (move != null && !move.equals("0")) {
+
                             gameBoard.makeMove(move);
                         }
                     }
@@ -172,6 +188,7 @@ public class Client {
                 if (cmd == '4') {
 
                     System.out.println("Coup invalide, nouveau coup par l'algorithme.");
+
                     if (gameBoard != null && gameBoard.isGameOver()) {
 
                         output.write("0".getBytes(), 0, 1);
@@ -180,16 +197,19 @@ public class Client {
                     } else {
 
                         if (boardBeforeOurMove != null) {
+
                             gameBoard = new Board(boardBeforeOurMove);
                         }
 
                         String move = getValidMoveForServer(gameBoard, ourSide, lastSentMove);
                         lastSentMove = normalizeMove(move);
+                        
                         System.out.println("[Client] Envoi du coup (nouvel essai) : " + move);
                         output.write(move.getBytes(), 0, move.length());
                         output.flush();
 
                         if (move != null && !move.equals("0")) {
+
                             boardBeforeOurMove = new Board(gameBoard);
                             gameBoard.makeMove(move);
                         }
@@ -202,14 +222,21 @@ public class Client {
                     int size = input.available();
                     input.read(aBuffer, 0, size);
                     String finalMoveMessage = new String(aBuffer).trim();
+
                     System.out.println("Partie terminée. Le dernier coup joué est : " + finalMoveMessage);
                     output.write("0".getBytes(), 0, 1);
                     output.flush();
 
                     try {
+
                         myClient.setSoTimeout(3000);
-                        while (input.read() >= 0) { }
+
+                        while (input.read() >= 0) { 
+
+                        }
+
                     } catch (IOException ignored) {
+
                     }
 
                     break;
@@ -217,6 +244,7 @@ public class Client {
             }
 
         } catch (IOException ioException) {
+
             System.out.println("Erreur de Input/Output : " + ioException);
 
         } finally {
@@ -224,18 +252,22 @@ public class Client {
             try {
 
                 if (output != null) {
+
                     output.close();
                 }
 
                 if (input != null) {
+
                     input.close();
                 }
 
                 if (myClient != null) {
+
                     myClient.close();
                 }
 
             } catch (IOException ioException) {
+
                 System.err.println("Erreur à la fermeture de la connexion : " + ioException.getMessage());
             }
 
@@ -261,38 +293,50 @@ public class Client {
             String lower = token.toLowerCase();
 
             if (lower.equals("--help") || lower.equals("-?")) {
+
                 printUsage();
                 System.exit(0);
             }
 
             if (lower.equals("--nogui") || lower.equals("--no-gui")) {
+
                 index++;
                 continue;
             }
 
             if (lower.equals("--host") || lower.equals("--hote") || lower.equals("-H")) {
+
                 if (index + 1 >= args.length) {
+                    
                     System.err.println("[Client] --host nécessite une adresse.");
                     printUsage();
                     System.exit(1);
                 }
+
                 config.serverHost = args[index + 1].trim();
                 index += 2;
                 continue;
             }
 
             if (lower.equals("--port") || lower.equals("-p")) {
+
                 if (index + 1 >= args.length) {
+
                     System.err.println("[Client] --port nécessite un numéro.");
                     printUsage();
                     System.exit(1);
                 }
+
                 try {
+
                     config.serverPort = parsePort(args[index + 1]);
+
                 } catch (IllegalArgumentException ex) {
+
                     System.err.println("[Client] " + ex.getMessage());
                     System.exit(1);
                 }
+
                 index += 2;
                 continue;
             }
@@ -305,17 +349,24 @@ public class Client {
                 continue;
 
             } catch (NumberFormatException ignored) {
+
             }
 
             if (lower.equals("red") || lower.equals("rouge") || lower.equals("r")) {
+
                 config.preferredSide = Mark.rouge;
+
             } else if (lower.equals("black") || lower.equals("noir") || lower.equals("b")) {
+                
                 config.preferredSide = Mark.noir;
+
             } else {
+
                 System.err.println("[Client] Argument non reconnu : " + args[index]);
                 printUsage();
                 System.exit(1);
             }
+
             index++;
         }
 
@@ -325,14 +376,20 @@ public class Client {
     private static int parsePort(String text) {
 
         int port;
+
         try {
             port = Integer.parseInt(text.trim());
+
         } catch (NumberFormatException ex) {
+
             throw new IllegalArgumentException("Port non numérique : " + text);
         }
+
         if (port < 1 || port > 65_535) {
+
             throw new IllegalArgumentException("Port invalide (1–65535) : " + port);
         }
+
         return port;
     }
 
@@ -379,34 +436,49 @@ public class Client {
                 JOptionPane.QUESTION_MESSAGE);
 
         if (result != JOptionPane.OK_OPTION) {
+
             System.out.println("[Client] Démarrage annulé.");
             System.exit(0);
         }
 
         String host = hostField.getText().trim();
+
         if (!host.isEmpty()) {
+
             config.serverHost = host;
         }
 
         try {
+
             config.serverPort = parsePort(portField.getText());
+
         } catch (IllegalArgumentException ex) {
+
             JOptionPane.showMessageDialog(null, ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
             System.exit(1);
+
         }
 
         try {
+
             int seconds = Integer.parseInt(secondsField.getText().trim());
             timeLimitMs = Math.max(1_000, Math.min(60_000, seconds * 1000L));
+
         } catch (NumberFormatException ex) {
+
             JOptionPane.showMessageDialog(null, "Secondes invalides (entier attendu).", "Erreur", JOptionPane.ERROR_MESSAGE);
             System.exit(1);
+
         }
 
         Object selected = colorCombo.getSelectedItem();
+
         if ("Noir".equals(selected)) {
+
             config.preferredSide = Mark.noir;
+            
         } else {
+
             config.preferredSide = Mark.rouge;
         }
     }
@@ -421,7 +493,9 @@ public class Client {
 
             board[columnIndex][rowIndex] = Integer.parseInt(boardValues[valueIndex]);
             columnIndex++;
+
             if (columnIndex == 8) {
+
                 columnIndex = 0;
                 rowIndex++;
             }
@@ -433,6 +507,7 @@ public class Client {
     private static void applyServerTimerIfPresent(String[] boardValues) {
 
         if (boardValues.length <= 64) {
+
             return;
         }
 
@@ -443,12 +518,14 @@ public class Client {
             System.out.println("[Client] Minuterie du serveur : " + (timeLimitMs / 1000) + " secondes");
 
         } catch (NumberFormatException ignored) {
+
         }
     }
 
     private static String getMoveFromAI(Board board, Mark sideToMove) {
 
         if (board == null || sideToMove == null) {
+
             return "A2A3";
         }
 
@@ -456,6 +533,7 @@ public class Client {
         String move = GameAI.getBestMove(board, sideToMove, limitMs);
 
         if (move == null) {
+
             List<String> moves = board.generateAllMoves(sideToMove);
             move = moves.isEmpty() ? "A2A3" : moves.get(0);
         }
@@ -466,16 +544,19 @@ public class Client {
     private static String getValidMoveForServer(Board board, Mark sideToMove, String excludeMove) {
 
         if (board == null || sideToMove == null) {
+
             return "0";
         }
 
         if (board.isGameOver()) {
+
             return "0";
         }
 
         List<String> legal = board.generateAllMoves(sideToMove);
 
         if (legal.isEmpty()) {
+
             return "0";
         }
 
@@ -487,6 +568,7 @@ public class Client {
             for (String legalMove : legal) {
 
                 if (!normalizeMove(legalMove).equals(excluded) && board.isValidMove(legalMove, sideToMove)) {
+
                     chosen = legalMove;
                     break;
                 }
@@ -494,6 +576,7 @@ public class Client {
         }
 
         if (chosen == null) {
+
             chosen = getMoveFromAI(board, sideToMove);
         }
 
@@ -503,6 +586,7 @@ public class Client {
     private static String normalizeMove(String move) {
 
         if (move == null) {
+
             return "";
         }
 
@@ -520,12 +604,14 @@ public class Client {
     private static String normalizeOpponentMove(String move) {
 
         if (move == null) {
+
             return null;
         }
 
         String normalizedMove = move.replace("[", "").replace("]", "").replace("-", "").replace(" ", "").trim();
 
         if (normalizedMove.length() < 4) {
+
             return move.trim();
         }
 
@@ -535,12 +621,14 @@ public class Client {
     private static String formatMoveForServer(String move) {
 
         if (move == null || move.length() < 4) {
+
             return move == null ? "0" : move;
         }
 
         String normalizedMove = move.replace("-", "").replace(" ", "").trim();
 
         if (normalizedMove.length() < 4) {
+
             return move;
         }
 

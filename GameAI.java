@@ -1,28 +1,25 @@
 import java.util.List;
 
-/**
- * Minimax with alpha-beta pruning. Chooses a move within the given time limit.
- */
 public final class GameAI {
 
     private GameAI() {
     }
 
-    /**
-     * Best move for {@code sideToMove} via iterative deepening and alpha-beta within {@code limitMs}.
-     */
     public static String getBestMove(Board board, Mark sideToMove, long limitMs) {
 
         if (board.isGameOver()) {
+
             return null;
         }
 
         List<String> moves = board.generateAllMoves(sideToMove);
 
         if (moves.isEmpty()) {
+
             return null;
         }
         if (moves.size() == 1) {
+
             return moves.get(0);
         }
 
@@ -42,6 +39,7 @@ public final class GameAI {
             for (String move : moves) {
 
                 if (System.currentTimeMillis() >= deadline) {
+
                     break;
                 }
 
@@ -49,12 +47,14 @@ public final class GameAI {
                 int score = alphaBeta(child, depth, alpha, beta, opposite(sideToMove), deadline, timedOut);
 
                 if (timedOut[0]) {
+
                     break;
                 }
                 
                 if (sideToMove == Mark.rouge) {
                     
                     if (score > depthBestScore) {
+
                         depthBestScore = score;
                         depthBestMove = move;
                     }
@@ -64,6 +64,7 @@ public final class GameAI {
                 } else {
 
                     if (score < depthBestScore) {
+
                         depthBestScore = score;
                         depthBestMove = move;
                     }
@@ -72,16 +73,19 @@ public final class GameAI {
                 }
 
                 if (beta <= alpha) {
+
                     break;
                 }
                 
             }
 
             if (timedOut[0]) {
+
                 break;
             }
 
             if (depthBestMove != null) {
+
                 bestMove = depthBestMove;
             }
 
@@ -101,6 +105,7 @@ public final class GameAI {
             boolean[] timedOut) {
 
         if (System.currentTimeMillis() >= deadline) {
+
             timedOut[0] = true;
             return 0;
         }
@@ -108,16 +113,19 @@ public final class GameAI {
         Mark winner = board.getWinner();
 
         if (winner != null) {
+
             return PositionEvaluator.evaluate(board);
         }
 
         if (depth == 0) {
+
             return PositionEvaluator.evaluate(board);
         }
 
         List<String> moves = board.generateAllMoves(currentPlayer);
 
         if (moves.isEmpty()) {
+
             return PositionEvaluator.evaluate(board);
         }
 
@@ -128,6 +136,7 @@ public final class GameAI {
             for (String move : moves) {
 
                 if (timedOut[0]) {
+
                     break;
                 }
 
@@ -138,6 +147,7 @@ public final class GameAI {
                 alpha = Math.max(alpha, value);
 
                 if (beta <= alpha) {
+
                     break;
                 }
             }
@@ -151,6 +161,7 @@ public final class GameAI {
         for (String move : moves) {
 
             if (timedOut[0]) {
+
                 break;
             }
 
@@ -161,7 +172,9 @@ public final class GameAI {
             beta = Math.min(beta, value);
 
             if (beta <= alpha) {
+                
                 break;
+
             }
         }
 
@@ -169,6 +182,7 @@ public final class GameAI {
     }
 
     private static Mark opposite(Mark mark) {
+
         return mark == Mark.rouge ? Mark.noir : Mark.rouge;
     }
 

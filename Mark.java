@@ -1,7 +1,3 @@
-/**
- * Represents the type of piece (or empty) on a Breakthrough board.
- * Matches server protocol: 0 = vide, 2 = noir, 4 = rouge.
- */
 enum Mark {
 
     noir(2),
@@ -23,9 +19,11 @@ enum Mark {
     public static Mark fromServerCode(int serverCode) {
 
         return switch (serverCode) {
+
             case 2 -> noir;
             case 4 -> rouge;
             default -> vide;
+            
         };
     }
 }

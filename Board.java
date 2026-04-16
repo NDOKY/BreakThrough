@@ -1,17 +1,12 @@
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Breakthrough board: 8x8 grid. Row 0 = rank 1 (black back rank), row 7 = rank 8 (red back rank).
- * Compatible with Client's int[column][row] layout when loading from server.
- */
 public class Board {
 
     private static final int GRID_SIZE = 8;
     private static final int RED_GOAL_ROW = 0;
     private static final int BLACK_GOAL_ROW = 7;
 
-    // Internal grid: grid[rowIndex][colIndex], row 0 = rank 1, row 7 = rank 8.
     private Mark[][] grid;
 
     public Board() {
@@ -20,10 +15,6 @@ public class Board {
         initializeDefaultPosition();
     }
 
-    /**
-     * Build board from server state. Server sends values in column-major order:
-     * board[column][row], row 0 = rank 1 (black back), row 7 = rank 8 (red back).
-     */
     public Board(int[][] serverBoard) {
 
         grid = new Mark[GRID_SIZE][GRID_SIZE];
@@ -37,7 +28,6 @@ public class Board {
         }
     }
 
-    // Copy constructor for search.
     public Board(Board other) {
 
         grid = new Mark[GRID_SIZE][GRID_SIZE];
@@ -74,7 +64,6 @@ public class Board {
         }
     }
 
-    // Apply a move in server format ("D6-D5" or "D6D5"). Does not validate.
     public void makeMove(String move) {
 
         if (move == null || move.length() < 4) {
@@ -107,7 +96,6 @@ public class Board {
         grid[fromRowIndex][fromColIndex] = Mark.vide;
     }
 
-    // Returns true if the move is valid for the given side.
     public boolean isValidMove(String move, Mark sideToMove) {
         
         if (move == null || move.length() < 4) {
@@ -186,7 +174,6 @@ public class Board {
         }
     }
 
-    // All legal moves for the given side. Each move is in format "A2A3" (no dash).
     public List<String> generateAllMoves(Mark sideToMove) {
 
         List<String> moves = new ArrayList<>();
@@ -197,12 +184,14 @@ public class Board {
             for (int colIndex = 0; colIndex < GRID_SIZE; colIndex++) {
 
                 if (grid[rowIndex][colIndex] != sideToMove) {
+
                     continue;
                 }
 
                 int nextRow = rowIndex + forwardDirection;
 
                 if (nextRow < 0 || nextRow >= GRID_SIZE) {
+
                     continue;
                 }
 
@@ -210,6 +199,7 @@ public class Board {
                 char fromCol = (char) ('A' + colIndex);
 
                 if (grid[nextRow][colIndex] == Mark.vide) {
+
                     moves.add(moveString(fromCol, fromRank, (char) ('A' + colIndex), 8 - nextRow));
                 }
 
@@ -218,6 +208,7 @@ public class Board {
                     Mark target = grid[nextRow][colIndex - 1];
 
                     if (target == Mark.vide || target != sideToMove) {
+
                         moves.add(moveString(fromCol, fromRank, (char) ('A' + colIndex - 1), 8 - nextRow));
                     }
                 }
@@ -226,6 +217,7 @@ public class Board {
                     Mark target = grid[nextRow][colIndex + 1];
 
                     if (target == Mark.vide || target != sideToMove) {
+                        
                         moves.add(moveString(fromCol, fromRank, (char) ('A' + colIndex + 1), 8 - nextRow));
                     }
                 }
@@ -239,7 +231,6 @@ public class Board {
         return "" + fromCol + fromRank + toCol + toRank;
     }
 
-    // Apply move and return new board. Current board remains unchanged.
     public Board applyMove(String move) {
 
         Board copy = new Board(this);
@@ -250,22 +241,24 @@ public class Board {
     public Mark getCell(int rowIndex, int colIndex) {
 
         if (rowIndex < 0 || rowIndex >= GRID_SIZE || colIndex < 0 || colIndex >= GRID_SIZE) {
+            
             return Mark.vide;
         }
         
         return grid[rowIndex][colIndex];
     }
 
-    // Returns the winner (rouge or noir) if a piece reached the goal row. Otherwise null.
     public Mark getWinner() {
 
         for (int colIndex = 0; colIndex < GRID_SIZE; colIndex++) {
 
             if (grid[RED_GOAL_ROW][colIndex] == Mark.rouge) {
+
                 return Mark.rouge;
             }
 
             if (grid[BLACK_GOAL_ROW][colIndex] == Mark.noir) {
+
                 return Mark.noir;
             }
         }
@@ -274,14 +267,15 @@ public class Board {
     }
 
     public boolean isGameOver() {
+
         return getWinner() != null;
     }
 
     public static int getGridSize() {
+
         return GRID_SIZE;
     }
 
-    // Export to Client-style int[column][row] (0, 2, 4).
     public int[][] toServerBoard() {
 
         int[][] serverBoard = new int[GRID_SIZE][GRID_SIZE];

@@ -1,7 +1,3 @@
-/**
- * Static evaluation of a Breakthrough position. Positive = good for red, negative = good for black.
- * Used by minimax/alpha-beta. Detects wins.
- */
 public final class PositionEvaluator {
 
     private static final int WIN_SCORE = 100_000;
@@ -11,19 +7,17 @@ public final class PositionEvaluator {
     private PositionEvaluator() {
     }
 
-    /**
-     * Evaluate the position for minimax. Positive favors rouge, negative favors noir.
-     * If the position is a win for a side, returns +/- WIN_SCORE.
-     */
     public static int evaluate(Board board) {
 
         Mark winner = board.getWinner();
 
         if (winner == Mark.rouge) {
+
             return WIN_SCORE;
         }
 
         if (winner == Mark.noir) {
+            
             return -WIN_SCORE;
         }
 
